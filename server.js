@@ -31,6 +31,7 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 		const { ballot_id, full_name, email, metamask_address } = req.body;
 		const file = req.file;
 
+		// Validate input
 		if (!ballot_id || !full_name || !email || !metamask_address || !file) {
 			return res.status(400).json({ error: "All fields are required." });
 		}
@@ -46,14 +47,24 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 			return res.status(500).json({ error: "Failed to upload photo." });
 		}
 
-		const id_photo_url = supabase.storage
+		// Get public URL of uploaded photo
+		const { data: publicUrlData } = supabase.storage
 			.from("voter-photos")
-			.getPublicUrl(filePath).data.publicUrl;
+			.getPublicUrl(filePath);
 
-		// Insert voter into pending_voters
-		const sql = `INSERT INTO pending_voters (ballot_id, full_name, email, metamask_address, id_photo) 
-                 VALUES ($1, $2, $3, $4, $5)`;
-		await db.query(sql, [
+		if (!publicUrlData || !publicUrlData.publicUrl) {
+			return res.status(500).json({ error: "Failed to get public URL." });
+		}
+
+		const id_photo_url = publicUrlData.publicUrl;
+
+		// Insert voter into pending_voters table
+		const sql = `
+      INSERT INTO pending_voters (ballot_id, full_name, email, metamask_address, id_photo)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `;
+		const { rows } = await db.query(sql, [
 			ballot_id,
 			full_name,
 			email,
@@ -61,7 +72,11 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 			id_photo_url,
 		]);
 
-		res.json({ success: true, message: "Voter registered successfully" });
+		res.json({
+			success: true,
+			message: "Voter registered successfully",
+			voter: rows[0],
+		});
 	} catch (err) {
 		console.error("Error in /register-voter:", err);
 		res.status(500).json({ error: "Internal server error" });
