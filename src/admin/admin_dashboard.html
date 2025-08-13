@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Admin Dashboard - Blockchain Voting</title>
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+		/>
+		<style>
+			body {
+				background-color: #e3f2fd;
+				display: flex;
+			}
+			.sidebar {
+				width: 250px;
+				height: 100vh;
+				background: #0288d1;
+				color: white;
+				padding: 20px;
+				position: fixed;
+			}
+			.sidebar h2 {
+				text-align: center;
+				margin-bottom: 30px;
+			}
+			.nav-item {
+				list-style: none;
+				margin-bottom: 10px;
+			}
+			.nav-link {
+				color: white;
+				padding: 10px;
+				display: block;
+				text-decoration: none;
+				transition: background 0.3s, color 0.3s;
+				border-radius: 5px;
+				cursor: pointer;
+			}
+			.nav-link:hover,
+			.sub-menu a:hover {
+				background: #0277bd;
+				color: white;
+			}
+			.sub-menu {
+				display: none;
+				padding-left: 20px;
+			}
+			.nav-item.active .sub-menu {
+				display: block;
+			}
+			.sub-menu a {
+				color: white;
+				padding: 8px;
+				display: block;
+				text-decoration: none;
+			}
+			.content {
+				margin-left: 260px;
+				padding: 20px;
+				width: 100%;
+			}
+			.fade-in {
+				opacity: 0;
+				animation: fadeIn 1.5s forwards;
+			}
+			@keyframes fadeIn {
+				from {
+					opacity: 0;
+				}
+				to {
+					opacity: 1;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Sidebar -->
+		<div class="sidebar fade-in">
+			<h2>Blockchain Voting System</h2>
+			<h3>Admin Dashboard</h3>
+			<ul class="nav flex-column">
+				<li class="nav-item">
+					<a class="nav-link" onclick="toggleSection('ballotsSection')"
+						>Ballots List</a
+					>
+				</li>
+
+				<li class="nav-item">
+					<a
+						class="nav-link"
+						data-bs-toggle="modal"
+						data-bs-target="#createBallotModal"
+						>Create Ballot</a
+					>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" onclick="toggleSubMenu('voterManagementMenu')"
+						>Voter Management</a
+					>
+					<ul id="voterManagementMenu" class="sub-menu">
+						<li>
+							<a class="nav-link" onclick="openRegisterVoterModal()">Register Voters</a>
+						</li>						
+						<li>
+							<a
+								class="nav-link"
+								onclick="toggleSection('pendingVotersSection')"
+								>Pending Approvals</a
+							></a>
+						</li>
+						<li>
+							<a class="nav-link" onclick="toggleSection('approvedVotersSection')">Approved Voters</a>
+						</li>
+					</ul>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" onclick="toggleSubMenu('reportsMenu')">Reports</a>
+					<ul id="reportsMenu" class="sub-menu">
+						<li>
+							<button id="openBallotReportModal" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#ballotReportModal">
+								Ballot Details
+							</button>
+						</li>
+						
+						<li><a href="#" data-bs-toggle="modal" data-bs-target="#registeredVotersModal">Registered Voters</a></li>
+						<li>
+							<a href="#" id="openResultsModal" data-bs-toggle="modal" data-bs-target="#resultsModal">Election Results</a>
+						</li>
+						
+					</ul>
+				</li>
+			</ul>
+		</div>
+
+		<!-- Ballots List Section -->
+		<div id="ballotsSection" class="content fade-in" style="display: block">
+			<h3 class="mt-4">Ballots</h3>
+			<table class="table mt-3">
+				<thead>
+					<tr>
+						<th>Ballot ID</th>
+						<th>Ballot Title</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody id="ballotsList">
+					<!-- Ballots will be dynamically inserted here -->
+				</tbody>
+			</table>
+		</div>
+
+		<!-- Ballot Creation Modal -->
+		<div
+			class="modal fade"
+			id="createBallotModal"
+			tabindex="-1"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Create a Ballot</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<form id="ballotForm">
+							<div class="mb-3">
+								<label class="form-label">Ballot Title</label>
+								<input
+									type="text"
+									id="ballotTitle"
+									class="form-control"
+									required
+								/>
+							</div>
+							<div id="positionsContainer"></div>
+							<button
+								type="button"
+								class="btn btn-secondary btn-sm mt-2"
+								id="addPosition"
+							>
+								+ Add Position
+							</button>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button
+							type="button"
+							class="btn btn-secondary"
+							data-bs-dismiss="modal"
+						>
+							Cancel
+						</button>
+						<button type="button" class="btn btn-primary" id="submitBallot">
+							Create Ballot
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Registered Voters Modal
+		<div class="modal fade" id="registeredVotersModal" tabindex="-1" aria-labelledby="registeredVotersModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="registeredVotersModalLabel">Registered Voters</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<label for="ballotIdVoterInput">Enter Ballot ID:</label>
+				<input type="text" id="ballotIdVoterInput" class="form-control" placeholder="8-character Ballot ID" />
+
+				<button id="fetchRegisteredVoters" class="btn btn-primary mt-3">Fetch</button>
+
+				<div id="voterDetailsContent" class="mt-3"></div>
+			</div>
+			<div class="modal-footer">
+				<button id="downloadVoterPdf" class="btn btn-success">Download PDF</button>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+			</div>
+		</div>
+		</div>
+		</div> -->
+		<!-- Registered Voters Modal -->
+<div class="modal fade" id="registeredVotersModal" tabindex="-1" aria-labelledby="registeredVotersModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h5 class="modal-title" id="registeredVotersModalLabel">Registered Voters</h5>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		<div class="modal-body">
+		  <label for="ballotIdVoterSelect">Select Ballot ID:</label>
+		  <select id="ballotIdVoterSelect" class="form-select" aria-label="Select Ballot ID">
+			<!-- Ballot IDs will be populated here dynamically -->
+		  </select>
+  
+		  <button id="fetchRegisteredVoters" class="btn btn-primary mt-3">Fetch</button>
+  
+		  <div id="voterDetailsContent" class="mt-3"></div>
+		</div>
+		<div class="modal-footer">
+		  <button id="downloadVoterPdf" class="btn btn-success">Download PDF</button>
+		  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+		</div>
+	  </div>
+	</div>
+  </div>
+  
+
+		<!-- Election Results Modal -->
+<div class="modal fade" id="resultsModal" tabindex="-1" aria-labelledby="resultsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resultsModalLabel">Election Results</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <label for="ballotSelect">Select Ballot:</label>
+                <select id="ballotSelect" class="form-select">
+                    <option value="">Loading ballots...</option>
+                </select>
+
+                <button id="fetchResultsBtn" class="btn btn-primary mt-3">Get Results</button>
+
+                <div id="resultsDisplay" class="mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="downloadResultsPdf" class="btn btn-success">Download PDF</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+		<!-- -------------------------------------------------------------------------------------------------------- -->
+
+		<!-- Manually Add Approved Voter Modal -->
+		<div class="modal fade" id="addApprovedVoterModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manually Add Approved Voter</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addApprovedVoterForm">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="voterName" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="voterEmail" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">MetaMask Address</label>
+                        <input type="text" id="voterAddress" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ballot ID</label>
+                        <input type="text" id="voterBallotId" class="form-control" required />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="addVoterButton">Add Voter</button>
+            </div>
+        </div>
+    </div>
+		</div>
+<!-- Results Modal -->
+<div class="modal fade" id="resultsModal1" tabindex="-1" aria-labelledby="resultsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resultsModalLabel">Voting Results</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Candidate</th>
+                            <th>Votes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        <!-- Results will be inserted dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+		<!-- Pending Voters Section -->
+		<div
+			id="pendingVotersSection"
+			class="content fade-in"
+			style="display: none"
+		>
+			<h3 class="mt-4">Pending Voter Approvals</h3>
+			<table class="table mt-3">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Ballot ID</th>
+						<th>Full Name</th>
+						<th>Email</th>
+						<th>MetaMask Address</th>
+						<th>ID Photo</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody id="pendingVotersTable"></tbody>
+			</table>
+		</div>
+
+		<!-- Approved Voters Section -->
+		<div id="approvedVotersSection" class="content fade-in" style="display: none">
+    		<h3 class="mt-4">Approved Voters</h3>
+    		<input type="text" id="searchVoter" placeholder="Search voter by name or MetaMask address">
+    		<div id="approvedVoterList"></div>		
+		</div>
+
+		<!-- -------------------------------------------------------------------------------------------------------- -->
+
+		<!-- Ballot Report Modal -->
+<div class="modal fade" id="ballotReportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">View Ballot Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label">Select Ballot</label>
+                <select id="ballotIdSelect" class="form-control">
+                    <option value="">Loading ballots...</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="fetchBallotDetails">View Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+		<script>
+			function toggleSubMenu(menuId) {
+				var subMenu = document.getElementById(menuId);
+				subMenu.style.display =
+					subMenu.style.display === "block" ? "none" : "block";
+			}
+			function toggleSection(sectionId) {
+				// Hide all sections first
+				document.getElementById("ballotsSection").style.display = "none";
+				document.getElementById("pendingVotersSection").style.display = "none";
+				document.getElementById("approvedVotersSection").style.display = "none";
+
+				// Show only the selected section
+				document.getElementById(sectionId).style.display = "block";
+			}
+		</script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+		<script type="module" src="admin_dashboard.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+		<script type="module" src="../blockchain.js"></script>
+	</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Voter Login - Blockchain Voting</title>
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+		/>
+		<!-- Include Web3.js via CDN -->
+		<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+
+		<style>
+			body {
+				background-color: #e3f2fd;
+				text-align: center;
+			}
+			.container {
+				margin-top: 10vh;
+				max-width: 400px;
+				background: white;
+				padding: 20px;
+				border-radius: 10px;
+				box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+			}
+			.btn-custom {
+				background-color: #0288d1;
+				color: white;
+				transition: transform 0.2s;
+			}
+			.btn-custom:hover {
+				background-color: #0277bd;
+				transform: scale(1.05);
+			}
+			.fade-in {
+				opacity: 0;
+				animation: fadeIn 1.5s forwards;
+			}
+			@keyframes fadeIn {
+				from {
+					opacity: 0;
+				}
+				to {
+					opacity: 1;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container fade-in">
+			<h2 id="loginHeader">Voter Login</h2>
+			<form id="loginForm">
+				<div class="mb-3">
+					<input
+						type="text"
+						class="form-control"
+						id="ballot_id"
+						placeholder="Ballot ID"
+						required
+					/>
+				</div>
+				<div class="mb-3">
+					<input
+						type="password"
+						class="form-control"
+						id="password"
+						placeholder="Password"
+						required
+					/>
+				</div>
+				<button type="submit" class="btn btn-custom w-100">Login</button>
+			</form>
+			<p class="mt-3" id="registerToggle">
+				<a href="#" id="toggleRegister">Don't have an account? Register</a>
+			</p>
+
+			<div id="registerForm" style="display: none">
+				<h2>Voter Registration</h2>
+				<form id="registrationForm" enctype="multipart/form-data">
+					<div class="mb-3">
+						<input
+							type="text"
+							class="form-control"
+							id="reg_ballot_id"
+							placeholder="Ballot ID"
+							required
+						/>
+					</div>
+					<div class="mb-3">
+						<input
+							type="text"
+							class="form-control"
+							id="full_name"
+							placeholder="Full Name"
+							required
+						/>
+					</div>
+					<div class="mb-3">
+						<input
+							type="email"
+							class="form-control"
+							id="email"
+							placeholder="E-mail Address"
+							required
+						/>
+					</div>
+					<div class="mb-3">
+						<input
+							type="text"
+							class="form-control"
+							id="metamask_address"
+							placeholder="MetaMask Address"
+							required
+						/>
+					</div>
+					<div class="mb-3">
+						<label for="credentialUpload" class="form-label"
+							>Upload Credential/ID</label
+						>
+						<input
+							type="file"
+							class="form-control"
+							id="credentialUpload"
+							required
+						/>
+					</div>
+					<button type="submit" class="btn btn-custom w-100">Register</button>
+				</form>
+				<p class="mt-3">
+					<a href="#" id="toggleLogin">Already have an account? Login</a>
+				</p>
+			</div>
+			<p id="message"></p>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+		<script type="module" src="voter_login.js"></script>
+		<script type="module" src="../blockchain.js"></script>
+	</body>
+</html>
