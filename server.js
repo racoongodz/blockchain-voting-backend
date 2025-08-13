@@ -2,337 +2,254 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
 const { createClient } = require("@supabase/supabase-js");
+const { Pool } = require("pg"); // Use Postgres client for Supabase DB
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// ------------------- Supabase Client -------------------
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Initialize Supabase
+const supabase = createClient(
+	process.env.SUPABASE_URL,
+	process.env.SUPABASE_KEY
+);
 
-// ------------------- Multer Setup -------------------
-const storage = multer.diskStorage({
-	destination: "./temp/", // temp folder
-	filename: (req, file, cb) => {
-		cb(null, Date.now() + "-" + file.originalname);
-	},
+// Postgres connection (Supabase)
+const db = new Pool({
+	connectionString: process.env.DATABASE_URL,
 });
-const upload = multer({ storage });
 
-// ------------------- Helper: Generate Password -------------------
-function generatePassword() {
-	const chars =
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-	let password = "";
-	for (let i = 0; i < 8; i++) {
-		password += chars.charAt(Math.floor(Math.random() * chars.length));
-	}
-	return password;
-}
+// Multer setup for in-memory storage
+const upload = multer({ storage: multer.memoryStorage() });
 
-// ------------------- Helper: Delete file from Supabase Storage -------------------
-async function deleteFileFromStorage(fileUrl) {
-	if (!fileUrl) return;
-	try {
-		const bucket = "voter-photos";
-		const filePath = fileUrl.split(`${bucket}/`)[1]; // extract path after bucket
-		if (!filePath) return;
-		const { error } = await supabase.storage.from(bucket).remove([filePath]);
-		if (error) console.error("❌ Error deleting file from storage:", error);
-	} catch (err) {
-		console.error("❌ Unexpected storage delete error:", err);
-	}
-}
-
-// ------------------- Register Voter -------------------
+// ======================
+// Voter Registration
+// ======================
 app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 	try {
 		const { ballot_id, full_name, email, metamask_address } = req.body;
-		if (!req.file)
-			return res.status(400).json({ error: "ID photo is required." });
+		const file = req.file;
 
-		const filePath = path.join(__dirname, "temp", req.file.filename);
-		const fileStream = fs.createReadStream(filePath);
-
-		const { data, error: uploadError } = await supabase.storage
-			.from("voter-photos")
-			.upload(req.file.filename, fileStream, {
-				cacheControl: "3600",
-				upsert: false,
-			});
-
-		fs.unlinkSync(filePath);
-
-		if (uploadError) {
-			console.error("❌ Storage upload error:", uploadError);
-			return res.status(500).json({ error: "Failed to upload ID photo" });
+		if (!ballot_id || !full_name || !email || !metamask_address || !file) {
+			return res.status(400).json({ error: "All fields are required." });
 		}
 
-		const { publicURL } = supabase.storage
+		// Upload photo to Supabase Storage
+		const filePath = `voter-photos/${Date.now()}-${file.originalname}`;
+		const { data, error: uploadError } = await supabase.storage
 			.from("voter-photos")
-			.getPublicUrl(req.file.filename);
+			.upload(filePath, file.buffer, { contentType: file.mimetype });
 
-		const { error } = await supabase
-			.from("pending_voters")
-			.insert([
-				{ ballot_id, full_name, email, metamask_address, id_photo: publicURL },
-			]);
+		if (uploadError) {
+			console.error("Supabase upload error:", uploadError);
+			return res.status(500).json({ error: "Failed to upload photo." });
+		}
 
-		if (error) throw error;
+		const id_photo_url = supabase.storage
+			.from("voter-photos")
+			.getPublicUrl(filePath).data.publicUrl;
 
-		res.json({ success: true, message: "Voter registered successfully!" });
+		// Insert voter into pending_voters
+		const sql = `INSERT INTO pending_voters (ballot_id, full_name, email, metamask_address, id_photo) 
+                 VALUES ($1, $2, $3, $4, $5)`;
+		await db.query(sql, [
+			ballot_id,
+			full_name,
+			email,
+			metamask_address,
+			id_photo_url,
+		]);
+
+		res.json({ success: true, message: "Voter registered successfully" });
 	} catch (err) {
-		console.error(err);
-		res.status(500).json({ error: "Internal Server Error" });
+		console.error("Error in /register-voter:", err);
+		res.status(500).json({ error: "Internal server error" });
 	}
 });
 
-// ------------------- Fetch Pending Voters -------------------
+// ======================
+// Fetch Pending Voters
+// ======================
 app.post("/pending-voters", async (req, res) => {
+	const { ballot_ids } = req.body;
+	if (!Array.isArray(ballot_ids) || ballot_ids.length === 0)
+		return res.status(400).json({ error: "Ballot IDs are required." });
+
+	const placeholders = ballot_ids.map((_, i) => `$${i + 1}`).join(",");
+	const sql = `SELECT * FROM pending_voters WHERE ballot_id IN (${placeholders})`;
 	try {
-		const { ballot_ids } = req.body;
-		if (!Array.isArray(ballot_ids) || ballot_ids.length === 0)
-			return res.status(400).json({ error: "Ballot IDs required." });
-
-		const { data, error } = await supabase
-			.from("pending_voters")
-			.select("*")
-			.in("ballot_id", ballot_ids);
-
-		if (error) throw error;
-		res.json(data || []);
+		const { rows } = await db.query(sql, ballot_ids);
+		res.json(rows);
 	} catch (err) {
 		console.error(err);
-		res.status(500).json({ error: "Internal Server Error" });
+		res.status(500).json({ error: "Failed to fetch pending voters." });
 	}
 });
 
-// ------------------- Approve Voter -------------------
+// ======================
+// Approve Voter
+// ======================
 app.post("/approve-voter", async (req, res) => {
+	const { voter_id } = req.body;
+	if (!voter_id)
+		return res.status(400).json({ error: "Voter ID is required." });
+
 	try {
-		const { voter_id } = req.body;
-		if (!voter_id) return res.status(400).json({ error: "Voter ID required" });
+		// Fetch voter from pending
+		const { rows } = await db.query(
+			"SELECT * FROM pending_voters WHERE id=$1",
+			[voter_id]
+		);
+		if (rows.length === 0)
+			return res.status(404).json({ error: "Voter not found." });
 
-		const { data: pendingVoter, error: fetchError } = await supabase
-			.from("pending_voters")
-			.select("*")
-			.eq("id", voter_id)
-			.single();
+		const voter = rows[0];
 
-		if (fetchError || !pendingVoter)
-			return res.status(404).json({ error: "Pending voter not found" });
+		// Generate password
+		const voter_password = Math.random().toString(36).slice(-8);
 
-		const { ballot_id, full_name, metamask_address, email, id_photo } =
-			pendingVoter;
+		// Check duplicates
+		const dupCheck = await db.query(
+			"SELECT * FROM approved_voters WHERE full_name=$1 OR metamask_address=$2",
+			[voter.full_name, voter.metamask_address]
+		);
+		if (dupCheck.rows.length > 0)
+			return res.status(400).json({ error: "Voter already approved." });
 
-		const { data: existing, error: checkError } = await supabase
-			.from("approved_voters")
-			.select("*")
-			.or(`full_name.eq.${full_name},metamask_address.eq.${metamask_address}`);
+		// Insert into approved_voters
+		await db.query(
+			`INSERT INTO approved_voters 
+      (ballot_id, full_name, email, metamask_address, id_photo, voter_password)
+      VALUES ($1,$2,$3,$4,$5,$6)`,
+			[
+				voter.ballot_id,
+				voter.full_name,
+				voter.email,
+				voter.metamask_address,
+				voter.id_photo,
+				voter_password,
+			]
+		);
 
-		if (checkError) throw checkError;
-		if (existing.length > 0)
-			return res.status(400).json({ error: "❌ Voter already exists." });
+		// Delete from pending
+		await db.query("DELETE FROM pending_voters WHERE id=$1", [voter_id]);
 
-		const voter_password = generatePassword();
-		const { error: insertError } = await supabase
-			.from("approved_voters")
-			.insert([
-				{
-					ballot_id,
-					full_name,
-					email,
-					metamask_address,
-					id_photo,
-					voter_password,
-				},
-			]);
-
-		if (insertError) throw insertError;
-
-		const { error: deleteError } = await supabase
-			.from("pending_voters")
-			.delete()
-			.eq("id", voter_id);
-
-		if (deleteError) throw deleteError;
-
-		res.json({ success: true, message: "✅ Voter approved successfully!" });
+		res.json({ success: true, message: "Voter approved successfully!" });
 	} catch (err) {
 		console.error(err);
-		res.status(500).json({ error: "Internal Server Error" });
+		res.status(500).json({ error: "Error approving voter." });
 	}
 });
 
-// ------------------- Reject Voter -------------------
+// ======================
+// Reject Voter
+// ======================
 app.post("/reject-voter", async (req, res) => {
+	const { voter_id } = req.body;
+	if (!voter_id)
+		return res.status(400).json({ error: "Voter ID is required." });
 	try {
-		const { voter_id } = req.body;
-		if (!voter_id) return res.status(400).json({ error: "Voter ID required" });
-
-		const { data: pendingVoter, error: fetchError } = await supabase
-			.from("pending_voters")
-			.select("id_photo")
-			.eq("id", voter_id)
-			.single();
-
-		if (fetchError || !pendingVoter)
-			return res.status(404).json({ error: "Pending voter not found" });
-
-		await deleteFileFromStorage(pendingVoter.id_photo);
-
-		const { error } = await supabase
-			.from("pending_voters")
-			.delete()
-			.eq("id", voter_id);
-		if (error) throw error;
-
+		await db.query("DELETE FROM pending_voters WHERE id=$1", [voter_id]);
 		res.json({ success: true, message: "Voter rejected successfully" });
 	} catch (err) {
 		console.error(err);
-		res.status(500).json({ error: "Internal Server Error" });
+		res.status(500).json({ error: "Failed to reject voter." });
 	}
 });
 
-// ------------------- Fetch Approved Voters -------------------
+// ======================
+// Approved Voters
+// ======================
 app.post("/approved-voters", async (req, res) => {
+	const { ballot_ids } = req.body;
+	if (!Array.isArray(ballot_ids) || ballot_ids.length === 0)
+		return res.status(400).json({ error: "Ballot IDs are required." });
+
+	const placeholders = ballot_ids.map((_, i) => `$${i + 1}`).join(",");
+	const sql = `SELECT * FROM approved_voters WHERE ballot_id IN (${placeholders}) ORDER BY ballot_id`;
 	try {
-		const { ballot_ids } = req.body;
-		if (!Array.isArray(ballot_ids) || ballot_ids.length === 0)
-			return res.status(400).json({ error: "Ballot IDs required." });
-
-		const { data: voters, error } = await supabase
-			.from("approved_voters")
-			.select("*")
-			.in("ballot_id", ballot_ids);
-
-		if (error) throw error;
-
-		const groupedVoters = {};
-		ballot_ids.forEach((id) => (groupedVoters[id] = []));
-		voters.forEach((voter) => groupedVoters[voter.ballot_id].push(voter));
-
-		res.json(groupedVoters);
+		const { rows } = await db.query(sql, ballot_ids);
+		res.json(rows);
 	} catch (err) {
 		console.error(err);
-		res.status(500).json({ error: "Internal Server Error" });
+		res.status(500).json({ error: "Failed to fetch approved voters." });
 	}
 });
 
-// ------------------- Search Approved Voters -------------------
+// ======================
+// Search Approved Voters
+// ======================
 app.get("/search-approved-voters", async (req, res) => {
+	const { query } = req.query;
+	if (!query) return res.status(400).json({ error: "Query is required." });
+
+	const sql = `SELECT * FROM approved_voters WHERE full_name ILIKE $1 OR metamask_address ILIKE $2`;
+	const param = `%${query}%`;
 	try {
-		const { query } = req.query;
-		if (!query)
-			return res.status(400).json({ error: "Search query required." });
-
-		const { data, error } = await supabase
-			.from("approved_voters")
-			.select("*")
-			.ilike("full_name", `%${query}%`)
-			.or(`metamask_address.ilike.%${query}%`);
-
-		if (error) throw error;
-		res.json(data);
+		const { rows } = await db.query(sql, [param, param]);
+		res.json(rows);
 	} catch (err) {
 		console.error(err);
-		res.status(500).json({ error: "Internal Server Error" });
+		res.status(500).json({ error: "Search failed." });
 	}
 });
 
-// ------------------- Delete Approved Voter -------------------
-app.delete("/delete-voter/:id", async (req, res) => {
-	try {
-		const voterId = req.params.id;
-
-		const { data: voter, error: fetchError } = await supabase
-			.from("approved_voters")
-			.select("id_photo")
-			.eq("id", voterId)
-			.single();
-
-		if (fetchError || !voter)
-			return res.status(404).json({ error: "Voter not found" });
-
-		await deleteFileFromStorage(voter.id_photo);
-
-		const { error } = await supabase
-			.from("approved_voters")
-			.delete()
-			.eq("id", voterId);
-		if (error) throw error;
-
-		res.json({ message: "Voter deleted successfully" });
-	} catch (err) {
-		console.error(err);
-		res.status(500).json({ error: "Failed to delete voter" });
-	}
-});
-
-// ------------------- Manually Add Approved Voter -------------------
+// ======================
+// Manually Add Approved Voter
+// ======================
 app.post("/addApprovedVoter", async (req, res) => {
+	const { full_name, email, metamask_address, ballot_id } = req.body;
+	if (!full_name || !email || !metamask_address || !ballot_id)
+		return res.status(400).json({ error: "All fields are required." });
+
 	try {
-		const { full_name, email, metamask_address, ballot_id, id_photo_url } =
-			req.body;
-		if (!full_name || !email || !metamask_address || !ballot_id)
-			return res.status(400).json({ error: "All fields are required." });
+		const dupCheck = await db.query(
+			"SELECT * FROM approved_voters WHERE ballot_id=$1 AND (full_name=$2 OR metamask_address=$3)",
+			[ballot_id, full_name, metamask_address]
+		);
+		if (dupCheck.rows.length > 0)
+			return res.status(400).json({ error: "Voter already exists." });
 
-		const { data: existing, error: checkError } = await supabase
-			.from("approved_voters")
-			.select("*")
-			.eq("ballot_id", ballot_id)
-			.or(`full_name.eq.${full_name},metamask_address.eq.${metamask_address}`);
+		const voter_password = Math.random().toString(36).slice(-8);
 
-		if (checkError) throw checkError;
-		if (existing.length > 0)
-			return res.status(400).json({ error: "❌ Voter already registered." });
+		await db.query(
+			`INSERT INTO approved_voters (ballot_id, full_name, email, metamask_address, voter_password)
+       VALUES ($1,$2,$3,$4,$5)`,
+			[ballot_id, full_name, email, metamask_address, voter_password]
+		);
 
-		const voter_password = generatePassword();
-		const { error: insertError } = await supabase
-			.from("approved_voters")
-			.insert([
-				{
-					ballot_id,
-					full_name,
-					email,
-					metamask_address,
-					id_photo: id_photo_url || null,
-					voter_password,
-				},
-			]);
-
-		if (insertError) throw insertError;
-
-		res.json({
-			success: true,
-			message: "✅ Voter manually added successfully!",
-		});
+		res.json({ success: true, message: "Voter manually added successfully!" });
 	} catch (err) {
 		console.error(err);
-		res.status(500).json({ error: "Internal Server Error" });
+		res.status(500).json({ error: "Failed to add voter." });
 	}
 });
 
-// ------------------- Get Approved Voters for Blockchain -------------------
+// ======================
+// Fetch Approved Voters for Blockchain
+// ======================
 app.get("/api/getApprovedVoters", async (req, res) => {
 	try {
-		const { data, error } = await supabase
-			.from("approved_voters")
-			.select("metamask_address,voter_password,ballot_id");
-
-		if (error) throw error;
-		res.json(data);
+		const { rows } = await db.query(
+			"SELECT metamask_address, voter_password, ballot_id FROM approved_voters"
+		);
+		res.json(rows);
 	} catch (err) {
 		console.error(err);
-		res.status(500).json({ error: "Internal Server Error" });
+		res.status(500).json({ error: "Failed to fetch approved voters." });
 	}
 });
 
-// ------------------- Start Server -------------------
-const PORT = 3000;
+// ======================
+// Test Endpoint
+// ======================
+app.get("/ping", (req, res) => {
+	res.json({ success: true, message: "Server is alive!" });
+});
+
+// ======================
+// Start Server
+// ======================
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
