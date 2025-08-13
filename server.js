@@ -18,6 +18,7 @@ const supabase = createClient(
 // Postgres connection (Supabase)
 const db = new Pool({
 	connectionString: process.env.DATABASE_URL,
+	ssl: { rejectUnauthorized: false },
 });
 
 // Multer setup for in-memory storage
