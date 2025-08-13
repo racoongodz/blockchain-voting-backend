@@ -373,11 +373,14 @@ async function fetchPendingVoters() {
 		}
 
 		// 🔹 Fetch pending voters using fetched ballot IDs
-		const response = await fetch("http://localhost:3000/pending-voters", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ ballot_ids: ballotIds }),
-		});
+		const response = await fetch(
+			"https://blockchain-voting-backend.onrender.com/pending-voters",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ ballot_ids: ballotIds }),
+			}
+		);
 
 		if (!response.ok) {
 			throw new Error("Server returned an error");
@@ -401,8 +404,8 @@ async function fetchPendingVoters() {
 				<td>${voter.email}</td>
 				<td>${voter.metamask_address}</td>
 				<td>
-					<a href="http://localhost:3000/uploads/${voter.id_photo}" target="_blank">
-						<img src="http://localhost:3000/uploads/${voter.id_photo}" alt="ID Photo" width="100">
+					<a href="https://blockchain-voting-backend.onrender.com/uploads/${voter.id_photo}" target="_blank">
+						<img src="https://blockchain-voting-backend.onrender.com/uploads/${voter.id_photo}" alt="ID Photo" width="100">
 					</a>
 				</td>
 				<td>
@@ -425,11 +428,14 @@ window.onload = fetchPendingVoters;
 // Approve Voter
 async function approveVoter(voterId) {
 	try {
-		const response = await fetch("http://localhost:3000/approve-voter", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ voter_id: voterId }),
-		});
+		const response = await fetch(
+			"https://blockchain-voting-backend.onrender.com/approve-voter",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ voter_id: voterId }),
+			}
+		);
 
 		const data = await response.json();
 
@@ -449,11 +455,14 @@ async function approveVoter(voterId) {
 // Reject Voter
 async function rejectVoter(voterId) {
 	try {
-		const response = await fetch("http://localhost:3000/reject-voter", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ voter_id: voterId }),
-		});
+		const response = await fetch(
+			"https://blockchain-voting-backend.onrender.com/reject-voter",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ voter_id: voterId }),
+			}
+		);
 
 		const data = await response.json();
 		alert(data.message);
@@ -492,7 +501,7 @@ async function fetchApprovedVoters() {
 
 		// 🔹 Fetch approved voters using ballot IDs
 		const response = await fetch(
-			"https://ici-blockchain-voting.netlify.app/approved-voters",
+			"https://blockchain-voting-backend.onrender.com/approved-voters",
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -628,7 +637,7 @@ async function registerApprovedVoters() {
 
 		// Fetch approved voters from MySQL
 		const response = await fetch(
-			"https://ici-blockchain-voting.netlify.app/api/getApprovedVoters"
+			"https://blockchain-voting-backend.onrender.com/api/getApprovedVoters"
 		);
 		const voters = await response.json();
 
@@ -672,7 +681,7 @@ async function deleteVoter(voterId, ballotId, button) {
 
 	try {
 		const response = await fetch(
-			`https://ici-blockchain-voting.netlify.app/delete-voter/${voterId}`,
+			`https://blockchain-voting-backend.onrender.com/delete-voter/${voterId}`,
 			{
 				method: "DELETE",
 			}
@@ -717,7 +726,7 @@ document
 
 		try {
 			const response = await fetch(
-				"https://ici-blockchain-voting.netlify.app/addApprovedVoter",
+				"https://blockchain-voting-backend.onrender.com/addApprovedVoter",
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },

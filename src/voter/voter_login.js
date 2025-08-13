@@ -44,7 +44,7 @@ document
 
 		try {
 			const response = await fetch(
-				"https://ici-blockchain-voting.netlify.app/register-voter",
+				"https://blockchain-voting-backend.onrender.com/register-voter",
 				{
 					method: "POST",
 					body: formData,
