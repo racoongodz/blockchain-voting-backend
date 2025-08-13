@@ -175,20 +175,39 @@ app.post("/reject-voter", async (req, res) => {
 });
 
 // ======================
-// Approved Voters
+// Fetch Approved Voters (Grouped by Ballot ID)
 // ======================
 app.post("/approved-voters", async (req, res) => {
-	const { ballot_ids } = req.body;
-	if (!Array.isArray(ballot_ids) || ballot_ids.length === 0)
-		return res.status(400).json({ error: "Ballot IDs are required." });
-
-	const placeholders = ballot_ids.map((_, i) => `$${i + 1}`).join(",");
-	const sql = `SELECT * FROM approved_voters WHERE ballot_id IN (${placeholders}) ORDER BY ballot_id`;
 	try {
+		const { ballot_ids } = req.body;
+
+		if (!Array.isArray(ballot_ids) || ballot_ids.length === 0) {
+			return res.status(400).json({ error: "Ballot IDs are required." });
+		}
+
+		// Create placeholders for SQL query
+		const placeholders = ballot_ids.map((_, i) => `$${i + 1}`).join(",");
+		const sql = `
+      SELECT id, ballot_id, full_name, email, metamask_address, voter_password
+      FROM approved_voters
+      WHERE ballot_id IN (${placeholders})
+      ORDER BY ballot_id, id
+    `;
+
 		const { rows } = await db.query(sql, ballot_ids);
-		res.json(rows);
+
+		// Group voters by ballot_id
+		const groupedVoters = {};
+		ballot_ids.forEach((id) => (groupedVoters[id] = [])); // initialize empty arrays
+
+		rows.forEach((voter) => {
+			if (!groupedVoters[voter.ballot_id]) groupedVoters[voter.ballot_id] = [];
+			groupedVoters[voter.ballot_id].push(voter);
+		});
+
+		res.json(groupedVoters);
 	} catch (err) {
-		console.error(err);
+		console.error("Error fetching approved voters:", err);
 		res.status(500).json({ error: "Failed to fetch approved voters." });
 	}
 });
