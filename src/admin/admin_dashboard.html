@@ -3,68 +3,136 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Admin Dashboard - Blockchain Voting</title>
+		<title>Admin Dashboard - Blockchain-Based Voting System</title>
 		<link
 			href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
 			rel="stylesheet"
 		/>
+		<link
+			rel="icon"
+			href="https://iciap.edu.ph/ici/assets/images/ici/logo.png"
+		/>
+		<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
 		<style>
 			body {
 				background-color: #e3f2fd;
+				font-family: Arial, Helvetica, sans-serif;
+				margin: 0;
+				padding: 0;
 				display: flex;
+				height: 100vh;
+				overflow: hidden;
 			}
+
+			/* Sidebar */
 			.sidebar {
 				width: 250px;
-				height: 100vh;
-				background: #0288d1;
+				background-color: #0288d1;
 				color: white;
+				height: 100%;
 				padding: 20px;
 				position: fixed;
+				overflow-y: auto;
 			}
-			.sidebar h2 {
-				text-align: center;
-				margin-bottom: 30px;
+
+			.sidebar .logo-title {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				margin-bottom: 20px;
 			}
+			.sidebar .logo-title img {
+				height: 50px;
+			}
+			.sidebar .logo-title .system-title {
+				line-height: 1.2;
+				font-size: 14px;
+				font-weight: bold;
+			}
+
+			/* Nav items */
 			.nav-item {
 				list-style: none;
 				margin-bottom: 10px;
 			}
 			.nav-link {
-				color: white;
-				padding: 10px;
 				display: block;
-				text-decoration: none;
-				transition: background 0.3s, color 0.3s;
+				padding: 10px 12px;
 				border-radius: 5px;
+				text-decoration: none;
+				font-weight: bold;
+				font-size: 14px;
+				color: white;
+				border: 2px solid transparent;
+				transition: all 0.3s ease;
 				cursor: pointer;
 			}
-			.nav-link:hover,
-			.sub-menu a:hover {
-				background: #0277bd;
-				color: white;
+			.nav-link:hover {
+				border-color: white;
+				background-color: rgba(255, 255, 255, 0.1);
 			}
+			.nav-link.active {
+				border-color: #040ac7;
+				background-color: white;
+				color: #040ac7;
+			}
+
 			.sub-menu {
 				display: none;
-				padding-left: 20px;
-			}
-			.nav-item.active .sub-menu {
-				display: block;
+				padding-left: 15px;
 			}
 			.sub-menu a {
-				color: white;
-				padding: 8px;
 				display: block;
+				padding: 8px;
+				border-radius: 5px;
 				text-decoration: none;
+				font-size: 14px;
+				color: white;
+				border: 2px solid transparent;
+				transition: all 0.3s ease;
 			}
+			.sub-menu a:hover {
+				border-color: white;
+				background-color: rgba(255, 255, 255, 0.1);
+			}
+			.sub-menu a.active {
+				border-color: #040ac7;
+				background-color: white;
+				color: #040ac7;
+			}
+
+			/* Content */
 			.content {
-				margin-left: 260px;
+				margin-left: 250px;
 				padding: 20px;
-				width: 100%;
-			}
-			.fade-in {
-				opacity: 0;
+				overflow-y: auto;
+				height: 100vh;
+				width: calc(100% - 250px);
 				animation: fadeIn 1.5s forwards;
 			}
+
+			.header {
+				display: flex;
+				align-items: center;
+				gap: 15px;
+				margin-bottom: 20px;
+			}
+			.header h2 {
+				margin: 0;
+				font-weight: bold;
+				font-size: 24px;
+			}
+
+			.btn-custom {
+				background-color: #0288d1;
+				color: white;
+				transition: transform 0.2s;
+			}
+			.btn-custom:hover {
+				background-color: #0277bd;
+				transform: scale(1.05);
+			}
+
 			@keyframes fadeIn {
 				from {
 					opacity: 0;
@@ -73,16 +141,83 @@
 					opacity: 1;
 				}
 			}
+
+			/* === Modal Styling === */
+			.modal-content {
+				border-radius: 12px;
+				border: none;
+				box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+				font-family: Arial, Helvetica, sans-serif;
+			}
+
+			.modal-header {
+				background-color: #0288d1;
+				color: white;
+				font-weight: bold;
+				border-bottom: none;
+				padding: 15px 20px;
+				border-top-left-radius: 12px;
+				border-top-right-radius: 12px;
+			}
+
+			.modal-title {
+				font-size: 1.25rem;
+				font-weight: bold;
+			}
+
+			.modal-body {
+				padding: 20px;
+				font-size: 0.95rem;
+			}
+
+			.modal-footer {
+				border-top: none;
+				padding: 15px 20px;
+			}
+
+			/* Buttons inside modals */
+			.modal-footer .btn-primary {
+				background-color: #0288d1;
+				border: none;
+				font-weight: bold;
+				transition: background-color 0.2s ease-in-out;
+			}
+
+			.modal-footer .btn-primary:hover {
+				background-color: #0277bd;
+			}
+
+			.modal-footer .btn-secondary {
+				background-color: #e0e0e0;
+				color: #333;
+				font-weight: bold;
+				border: none;
+				transition: background-color 0.2s ease-in-out;
+			}
+
+			.modal-footer .btn-secondary:hover {
+				background-color: #d5d5d5;
+			}
 		</style>
 	</head>
 	<body>
 		<!-- Sidebar -->
-		<div class="sidebar fade-in">
-			<h2>Blockchain Voting System</h2>
-			<h3>Admin Dashboard</h3>
+		<div class="sidebar">
+			<div class="logo-title">
+				<img
+					src="https://iciap.edu.ph/ici/assets/images/ici/logo.png"
+					alt="ICI Logo"
+				/>
+				<div class="system-title">
+					Blockchain-Based <br />Voting System <br />for Elections at ICI
+				</div>
+			</div>
+
 			<ul class="nav flex-column">
 				<li class="nav-item">
-					<a class="nav-link" onclick="toggleSection('ballotsSection')"
+					<a
+						class="nav-link active"
+						onclick="setActive(this); toggleSection('ballotsSection')"
 						>Ballots List</a
 					>
 				</li>
@@ -100,21 +235,23 @@
 					>
 					<ul id="voterManagementMenu" class="sub-menu">
 						<li>
-							<a class="nav-link" onclick="openRegisterVoterModal()"
+							<a
+								class="nav-link"
+								onclick="setActive(this); openRegisterVoterModal()"
 								>Register Voters</a
 							>
 						</li>
 						<li>
 							<a
 								class="nav-link"
-								onclick="toggleSection('pendingVotersSection')"
+								onclick="setActive(this); toggleSection('pendingVotersSection')"
 								>Pending Approvals</a
 							>
 						</li>
 						<li>
 							<a
 								class="nav-link"
-								onclick="toggleSection('approvedVotersSection')"
+								onclick="setActive(this); toggleSection('approvedVotersSection')"
 								>Approved Voters</a
 							>
 						</li>
@@ -124,18 +261,18 @@
 					<a class="nav-link" onclick="toggleSubMenu('reportsMenu')">Reports</a>
 					<ul id="reportsMenu" class="sub-menu">
 						<li>
-							<button
-								id="openBallotReportModal"
-								class="btn btn-info"
+							<a
+								class="nav-link"
+								onclick="setActive(this);"
 								data-bs-toggle="modal"
 								data-bs-target="#ballotReportModal"
+								>Ballot Details</a
 							>
-								Ballot Details
-							</button>
 						</li>
 						<li>
 							<a
-								href="#"
+								class="nav-link"
+								onclick="setActive(this);"
 								data-bs-toggle="modal"
 								data-bs-target="#registeredVotersModal"
 								>Registered Voters</a
@@ -143,8 +280,8 @@
 						</li>
 						<li>
 							<a
-								href="#"
-								id="openResultsModal"
+								class="nav-link"
+								onclick="setActive(this);"
 								data-bs-toggle="modal"
 								data-bs-target="#resultsModal"
 								>Election Results</a
@@ -155,353 +292,89 @@
 			</ul>
 		</div>
 
-		<!-- Ballots List Section -->
-		<div id="ballotsSection" class="content fade-in" style="display: block">
-			<h3 class="mt-4">Ballots</h3>
-			<table class="table mt-3">
-				<thead>
-					<tr>
-						<th>Ballot ID</th>
-						<th>Ballot Title</th>
-						<th>Actions</th>
-					</tr>
-				</thead>
-				<tbody id="ballotsList"></tbody>
-			</table>
-		</div>
+		<!-- Content -->
+		<div class="content">
+			<div class="header">
+				<h2>Admin Dashboard</h2>
+			</div>
 
-		<!-- Pending Voters Section -->
-		<div
-			id="pendingVotersSection"
-			class="content fade-in"
-			style="display: none"
-		>
-			<h3 class="mt-4">Pending Voter Approvals</h3>
-			<table class="table mt-3">
-				<thead>
-					<tr>
-						<th>ID</th>
-						<th>Ballot ID</th>
-						<th>Full Name</th>
-						<th>Email</th>
-						<th>MetaMask Address</th>
-						<th>ID Photo</th>
-						<th>Action</th>
-					</tr>
-				</thead>
-				<tbody id="pendingVotersTable"></tbody>
-			</table>
-		</div>
+			<!-- Ballots Section -->
+			<div id="ballotsSection" style="display: block">
+				<h3>Ballots</h3>
+				<table class="table mt-3">
+					<thead>
+						<tr>
+							<th>Ballot ID</th>
+							<th>Ballot Title</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody id="ballotsList"></tbody>
+				</table>
+			</div>
 
-		<!-- Approved Voters Section -->
-		<div
-			id="approvedVotersSection"
-			class="content fade-in"
-			style="display: none"
-		>
-			<h3 class="mt-4">Approved Voters</h3>
-			<input
-				type="text"
-				id="searchVoter"
-				placeholder="Search voter by name or MetaMask address"
-				class="form-control mb-3"
-			/>
-			<div id="approvedVoterList"></div>
-		</div>
+			<!-- Pending Voters Section -->
+			<div id="pendingVotersSection" style="display: none">
+				<h3>Pending Voter Approvals</h3>
+				<table class="table mt-3">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Ballot ID</th>
+							<th>Full Name</th>
+							<th>Email</th>
+							<th>MetaMask Address</th>
+							<th>ID Photo</th>
+							<th>Action</th>
+						</tr>
+					</thead>
+					<tbody id="pendingVotersTable"></tbody>
+				</table>
+			</div>
 
-		<!-- Create Ballot Modal -->
-		<div
-			class="modal fade"
-			id="createBallotModal"
-			tabindex="-1"
-			aria-hidden="true"
-		>
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title">Create a Ballot</h5>
-						<button
-							type="button"
-							class="btn-close"
-							data-bs-dismiss="modal"
-							aria-label="Close"
-						></button>
-					</div>
-					<div class="modal-body">
-						<form id="ballotForm">
-							<div class="mb-3">
-								<label class="form-label">Ballot Title</label>
-								<input
-									type="text"
-									id="ballotTitle"
-									class="form-control"
-									required
-								/>
-							</div>
-							<div id="positionsContainer"></div>
-							<button
-								type="button"
-								class="btn btn-secondary btn-sm mt-2"
-								id="addPosition"
-							>
-								+ Add Position
-							</button>
-						</form>
-					</div>
-					<div class="modal-footer">
-						<button
-							type="button"
-							class="btn btn-secondary"
-							data-bs-dismiss="modal"
-						>
-							Cancel
-						</button>
-						<button type="button" class="btn btn-primary" id="submitBallot">
-							Create Ballot
-						</button>
-					</div>
-				</div>
+			<!-- Approved Voters Section -->
+			<div id="approvedVotersSection" style="display: none">
+				<h3>Approved Voters</h3>
+				<input
+					type="text"
+					id="searchVoter"
+					placeholder="Search voter by name or MetaMask address"
+					class="form-control mb-3"
+				/>
+				<div id="approvedVoterList"></div>
 			</div>
 		</div>
 
-		<!-- Registered Voters Modal -->
-		<div
-			class="modal fade"
-			id="registeredVotersModal"
-			tabindex="-1"
-			aria-labelledby="registeredVotersModalLabel"
-			aria-hidden="true"
-		>
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="registeredVotersModalLabel">
-							Registered Voters
-						</h5>
-						<button
-							type="button"
-							class="btn-close"
-							data-bs-dismiss="modal"
-							aria-label="Close"
-						></button>
-					</div>
-					<div class="modal-body">
-						<label for="ballotIdVoterSelect">Select Ballot ID:</label>
-						<select id="ballotIdVoterSelect" class="form-select"></select>
-						<button id="fetchRegisteredVoters" class="btn btn-primary mt-3">
-							Fetch
-						</button>
-						<div id="voterDetailsContent" class="mt-3"></div>
-					</div>
-					<div class="modal-footer">
-						<button id="downloadVoterPdf" class="btn btn-success">
-							Download PDF
-						</button>
-						<button
-							type="button"
-							class="btn btn-secondary"
-							data-bs-dismiss="modal"
-						>
-							Close
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- Election Results Modal -->
-		<div
-			class="modal fade"
-			id="resultsModal"
-			tabindex="-1"
-			aria-labelledby="resultsModalLabel"
-			aria-hidden="true"
-		>
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="resultsModalLabel">Election Results</h5>
-						<button
-							type="button"
-							class="btn-close"
-							data-bs-dismiss="modal"
-							aria-label="Close"
-						></button>
-					</div>
-					<div class="modal-body">
-						<label for="ballotSelect">Select Ballot:</label>
-						<select id="ballotSelect" class="form-select">
-							<option value="">Loading ballots...</option>
-						</select>
-						<button id="fetchResultsBtn" class="btn btn-primary mt-3">
-							Get Results
-						</button>
-						<div id="resultsDisplay" class="mt-3"></div>
-					</div>
-					<div class="modal-footer">
-						<button id="downloadResultsPdf" class="btn btn-success">
-							Download PDF
-						</button>
-						<button
-							type="button"
-							class="btn btn-secondary"
-							data-bs-dismiss="modal"
-						>
-							Close
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- Ballot Report Modal -->
-		<div
-			class="modal fade"
-			id="ballotReportModal"
-			tabindex="-1"
-			aria-hidden="true"
-		>
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title">View Ballot Report</h5>
-						<button
-							type="button"
-							class="btn-close"
-							data-bs-dismiss="modal"
-							aria-label="Close"
-						></button>
-					</div>
-					<div class="modal-body">
-						<label class="form-label">Select Ballot</label>
-						<select id="ballotIdSelect" class="form-control">
-							<option value="">Loading ballots...</option>
-						</select>
-					</div>
-					<div class="modal-footer">
-						<button
-							type="button"
-							class="btn btn-secondary"
-							data-bs-dismiss="modal"
-						>
-							Close
-						</button>
-						<button
-							type="button"
-							class="btn btn-primary"
-							id="fetchBallotDetails"
-						>
-							View Report
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- Manually Add Approved Voter Modal -->
-		<div
-			class="modal fade"
-			id="addApprovedVoterModal"
-			tabindex="-1"
-			aria-hidden="true"
-		>
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title">Manually Add Approved Voter</h5>
-						<button
-							type="button"
-							class="btn-close"
-							data-bs-dismiss="modal"
-							aria-label="Close"
-						></button>
-					</div>
-					<div class="modal-body">
-						<form id="addApprovedVoterForm">
-							<div class="mb-3">
-								<label class="form-label">Full Name</label>
-								<input
-									type="text"
-									id="voterName"
-									class="form-control"
-									required
-								/>
-							</div>
-							<div class="mb-3">
-								<label class="form-label">Email</label>
-								<input
-									type="email"
-									id="voterEmail"
-									class="form-control"
-									required
-								/>
-							</div>
-							<div class="mb-3">
-								<label class="form-label">MetaMask Address</label>
-								<input
-									type="text"
-									id="voterAddress"
-									class="form-control"
-									required
-								/>
-							</div>
-							<div class="mb-3">
-								<label class="form-label">Ballot ID</label>
-								<input
-									type="text"
-									id="voterBallotId"
-									class="form-control"
-									required
-								/>
-							</div>
-						</form>
-					</div>
-					<div class="modal-footer">
-						<button
-							type="button"
-							class="btn btn-secondary"
-							data-bs-dismiss="modal"
-						>
-							Cancel
-						</button>
-						<button type="button" class="btn btn-primary" id="addVoterButton">
-							Add Voter
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- -------------------------------------------------------------------------------------------------------- -->
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+		<script type="module" src="admin_dashboard.js"></script>
+		<script type="module" src="../blockchain.js"></script>
 
 		<script>
-			// Expose functions globally
-			window.toggleSubMenu = function (menuId) {
+			function toggleSubMenu(menuId) {
 				const subMenu = document.getElementById(menuId);
 				subMenu.style.display =
 					subMenu.style.display === "block" ? "none" : "block";
-			};
+			}
 
-			window.toggleSection = function (sectionId) {
+			function toggleSection(sectionId) {
 				document.getElementById("ballotsSection").style.display = "none";
 				document.getElementById("pendingVotersSection").style.display = "none";
 				document.getElementById("approvedVotersSection").style.display = "none";
 				document.getElementById(sectionId).style.display = "block";
 
-				if (sectionId === "approvedVotersSection") {
-					fetchApprovedVoters();
-				}
-			};
+				if (sectionId === "approvedVotersSection") fetchApprovedVoters();
+			}
 
-			window.fetchApprovedVoters = async function () {
-				// Your fetchApprovedVoters code goes here (same as before)
-			};
+			function setActive(el) {
+				document
+					.querySelectorAll(".nav-link")
+					.forEach((link) => link.classList.remove("active"));
+				el.classList.add("active");
+			}
+
+			async function fetchApprovedVoters() {
+				// Your fetch logic
+			}
 		</script>
-
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-		<script type="module" src="admin_dashboard.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
-		<script type="module" src="../blockchain.js"></script>
 	</body>
 </html>
