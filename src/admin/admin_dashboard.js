@@ -910,7 +910,7 @@ async function viewResults(ballotId) {
 		}
 
 		// Get the modal elements
-		const resultsModal = document.getElementById("resultsModal1");
+		const resultsModal = document.getElementById("resultsModal");
 		const resultsBody = document.getElementById("resultsDisplay");
 
 		// Clear previous results
