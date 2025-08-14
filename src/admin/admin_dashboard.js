@@ -424,6 +424,13 @@ async function fetchPendingVoters() {
 		tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error fetching pending voters.</td></tr>`;
 	}
 }
+// ✅ Prevent multiple runs on page load
+window.onload = () => {
+	if (!window.fetchPendingVotersLoaded) {
+		window.fetchPendingVotersLoaded = true;
+		fetchPendingVoters();
+	}
+};
 
 // window.onload = fetchPendingVoters;
 
