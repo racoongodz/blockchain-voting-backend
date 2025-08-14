@@ -771,17 +771,17 @@ export async function registerMultipleVoters(
 		if (!account) {
 			console.error("❌ No wallet connected.");
 			alert("Please connect your wallet first.");
-			return;
+			return null;
 		}
 
-		// Pre-check: array lengths
+		// Pre-checks
 		if (!Array.isArray(voterAddresses) || voterAddresses.length === 0) {
 			console.error(
 				"❌ voterAddresses array is empty or invalid:",
 				voterAddresses
 			);
 			alert("No voters selected to register.");
-			return;
+			return null;
 		}
 
 		if (
@@ -793,13 +793,13 @@ export async function registerMultipleVoters(
 				hashedPasswords
 			);
 			alert("Password array is invalid or does not match voter list.");
-			return;
+			return null;
 		}
 
 		if (!ballotId) {
 			console.error("❌ ballotId is missing or invalid:", ballotId);
 			alert("Ballot ID is invalid.");
-			return;
+			return null;
 		}
 
 		console.log("➡ Attempting to register voters:");
@@ -813,17 +813,16 @@ export async function registerMultipleVoters(
 			.registerMultipleVoters(voterAddresses, ballotId, hashedPasswords)
 			.send({ from: account });
 
-		console.log("✅ Transaction successful:", receipt);
-		alert("Voters registered successfully!");
+		console.log("✅ Transaction receipt:", receipt);
+		return receipt; // Return the receipt so the caller can check receipt.status
 	} catch (error) {
-		// Detailed error logging
 		console.error("❌ Error registering voters:", error);
-
 		if (error?.message) {
 			alert("Transaction failed: " + error.message);
 		} else {
 			alert("Transaction failed. Check console for details.");
 		}
+		return null; // Return null on failure
 	}
 }
 
