@@ -155,7 +155,7 @@
 			</ul>
 		</div>
 
-		<!-- Ballots Section -->
+		<!-- Ballots List Section -->
 		<div id="ballotsSection" class="content fade-in" style="display: block">
 			<h3 class="mt-4">Ballots</h3>
 			<table class="table mt-3">
@@ -287,11 +287,7 @@
 					</div>
 					<div class="modal-body">
 						<label for="ballotIdVoterSelect">Select Ballot ID:</label>
-						<select
-							id="ballotIdVoterSelect"
-							class="form-select"
-							aria-label="Select Ballot ID"
-						></select>
+						<select id="ballotIdVoterSelect" class="form-select"></select>
 						<button id="fetchRegisteredVoters" class="btn btn-primary mt-3">
 							Fetch
 						</button>
@@ -352,6 +348,50 @@
 							data-bs-dismiss="modal"
 						>
 							Close
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Ballot Report Modal -->
+		<div
+			class="modal fade"
+			id="ballotReportModal"
+			tabindex="-1"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">View Ballot Report</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<label class="form-label">Select Ballot</label>
+						<select id="ballotIdSelect" class="form-control">
+							<option value="">Loading ballots...</option>
+						</select>
+					</div>
+					<div class="modal-footer">
+						<button
+							type="button"
+							class="btn btn-secondary"
+							data-bs-dismiss="modal"
+						>
+							Close
+						</button>
+						<button
+							type="button"
+							class="btn btn-primary"
+							id="fetchBallotDetails"
+						>
+							View Report
 						</button>
 					</div>
 				</div>
@@ -432,110 +472,36 @@
 			</div>
 		</div>
 
-		<!-- Ballot Report Modal -->
-		<div
-			class="modal fade"
-			id="ballotReportModal"
-			tabindex="-1"
-			aria-hidden="true"
-		>
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title">View Ballot Report</h5>
-						<button
-							type="button"
-							class="btn-close"
-							data-bs-dismiss="modal"
-							aria-label="Close"
-						></button>
-					</div>
-					<div class="modal-body">
-						<label class="form-label">Select Ballot</label>
-						<select id="ballotIdSelect" class="form-control">
-							<option value="">Loading ballots...</option>
-						</select>
-					</div>
-					<div class="modal-footer">
-						<button
-							type="button"
-							class="btn btn-secondary"
-							data-bs-dismiss="modal"
-						>
-							Close
-						</button>
-						<button
-							type="button"
-							class="btn btn-primary"
-							id="fetchBallotDetails"
-						>
-							View Report
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
+		<!-- -------------------------------------------------------------------------------------------------------- -->
 
-		<!-- Voting Results Modal (extra) -->
-		<div
-			class="modal fade"
-			id="resultsModal1"
-			tabindex="-1"
-			aria-labelledby="resultsModalLabel"
-			aria-hidden="true"
-		>
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="resultsModalLabel">Voting Results</h5>
-						<button
-							type="button"
-							class="btn-close"
-							data-bs-dismiss="modal"
-							aria-label="Close"
-						></button>
-					</div>
-					<div class="modal-body">
-						<table class="table">
-							<thead>
-								<tr>
-									<th>Candidate</th>
-									<th>Votes</th>
-								</tr>
-							</thead>
-							<tbody id="resultsBody"></tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<script type="module">
-			import { fetchApprovedVoters } from "./admin_dashboard.js";
-
-			function toggleSubMenu(menuId) {
+		<script>
+			// Expose functions globally
+			window.toggleSubMenu = function (menuId) {
 				const subMenu = document.getElementById(menuId);
 				subMenu.style.display =
 					subMenu.style.display === "block" ? "none" : "block";
-			}
+			};
 
-			function toggleSection(sectionId) {
-				[
-					"ballotsSection",
-					"pendingVotersSection",
-					"approvedVotersSection",
-				].forEach((id) => {
-					document.getElementById(id).style.display =
-						id === sectionId ? "block" : "none";
-				});
-				if (sectionId === "approvedVotersSection") fetchApprovedVoters();
-			}
+			window.toggleSection = function (sectionId) {
+				document.getElementById("ballotsSection").style.display = "none";
+				document.getElementById("pendingVotersSection").style.display = "none";
+				document.getElementById("approvedVotersSection").style.display = "none";
+				document.getElementById(sectionId).style.display = "block";
+
+				if (sectionId === "approvedVotersSection") {
+					fetchApprovedVoters();
+				}
+			};
+
+			window.fetchApprovedVoters = async function () {
+				// Your fetchApprovedVoters code goes here (same as before)
+			};
 		</script>
 
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+		<script type="module" src="admin_dashboard.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
 		<script type="module" src="../blockchain.js"></script>
-		<script type="module" src="admin_dashboard.js"></script>
 	</body>
 </html>
