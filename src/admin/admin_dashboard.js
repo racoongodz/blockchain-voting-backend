@@ -360,29 +360,21 @@ document.addEventListener("DOMContentLoaded", function () {
 //---------------------------------------------------------------------------------------
 async function fetchPendingVoters() {
 	try {
-		// 🔹 Get ballot IDs from the blockchain dynamically
 		const { ballotIds } = await getMyBallots();
-
-		// ✅ Remove duplicate ballot IDs just in case
-		const uniqueBallotIds = [...new Set(ballotIds)];
-
-		// ✅ Get the table body and clear previous content
 		const tableBody = document.getElementById("pendingVotersTable");
 		tableBody.innerHTML = "";
 
-		// 🔹 If no ballots are assigned to the admin, show message
-		if (!Array.isArray(uniqueBallotIds) || uniqueBallotIds.length === 0) {
+		if (!Array.isArray(ballotIds) || ballotIds.length === 0) {
 			tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No ballots assigned to you.</td></tr>`;
 			return;
 		}
 
-		// 🔹 Fetch pending voters using unique ballot IDs
 		const response = await fetch(
 			"https://blockchain-voting-backend.onrender.com/pending-voters",
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ ballot_ids: uniqueBallotIds }),
+				body: JSON.stringify({ ballot_ids: ballotIds }),
 			}
 		);
 
@@ -390,20 +382,23 @@ async function fetchPendingVoters() {
 			throw new Error("Server returned an error");
 		}
 
-		const data = await response.json();
+		let data = await response.json();
 
-		// 🔹 If no pending voters, display a message
+		// ✅ Deduplicate by voter.id
+		const uniqueVotersMap = new Map();
+		data.forEach((voter) => {
+			if (!uniqueVotersMap.has(voter.id)) {
+				uniqueVotersMap.set(voter.id, voter);
+			}
+		});
+		data = Array.from(uniqueVotersMap.values());
+
 		if (!data || data.length === 0) {
 			tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No pending voter applications.</td></tr>`;
 			return;
 		}
 
-		// ✅ Remove duplicates by voter ID
-		const seen = new Set();
 		data.forEach((voter) => {
-			if (seen.has(voter.id)) return; // Skip if already added
-			seen.add(voter.id);
-
 			const row = document.createElement("tr");
 			row.innerHTML = `
 				<td>${voter.id}</td>
@@ -430,7 +425,6 @@ async function fetchPendingVoters() {
 	}
 }
 
-// ✅ Call this function when the admin dashboard loads
 window.onload = fetchPendingVoters;
 
 // Approve Voter
