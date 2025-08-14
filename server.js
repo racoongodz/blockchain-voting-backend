@@ -125,13 +125,15 @@ app.post("/approve-voter", async (req, res) => {
 		// Generate password
 		const voter_password = Math.random().toString(36).slice(-8);
 
-		// Check duplicates
+		// ✅ Check duplicates only for the same ballot
 		const dupCheck = await db.query(
-			"SELECT * FROM approved_voters WHERE full_name=$1 OR metamask_address=$2",
-			[voter.full_name, voter.metamask_address]
+			"SELECT * FROM approved_voters WHERE ballot_id=$1 AND (full_name=$2 OR metamask_address=$3)",
+			[voter.ballot_id, voter.full_name, voter.metamask_address]
 		);
 		if (dupCheck.rows.length > 0)
-			return res.status(400).json({ error: "Voter already approved." });
+			return res
+				.status(400)
+				.json({ error: "Voter already approved for this ballot." });
 
 		// Insert into approved_voters
 		await db.query(
