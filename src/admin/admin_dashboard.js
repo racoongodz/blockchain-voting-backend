@@ -485,21 +485,19 @@ document.addEventListener("DOMContentLoaded", fetchPendingVoters);
 // Load Approved Voters
 async function fetchApprovedVoters() {
 	try {
-		// 🔹 Fetch ballot IDs assigned to this admin
 		const { ballotIds } = await getMyBallots();
-
-		// ✅ Get the section container
 		const section = document.getElementById("approvedVotersSection");
-		section.innerHTML = ""; // Clear any previous content
-		section.style.display = "none";
+		const listContainer = document.getElementById("approvedVoterList");
+
+		listContainer.innerHTML = ""; // Clear previous list
+		section.style.display = "block"; // Show section
 
 		if (!Array.isArray(ballotIds) || ballotIds.length === 0) {
-			section.innerHTML = `<p class="text-center text-muted">No ballots assigned to you.</p>`;
-			section.style.display = "block";
+			listContainer.innerHTML = `<p class="text-center text-muted">No ballots assigned to you.</p>`;
 			return;
 		}
 
-		// 🔹 Fetch approved voters from backend
+		// Fetch approved voters from backend
 		const response = await fetch(
 			"https://blockchain-voting-backend.onrender.com/approved-voters",
 			{
@@ -514,34 +512,21 @@ async function fetchApprovedVoters() {
 
 		const groupedVoters = await response.json();
 
-		// 🔹 Check if any voters exist
+		// Check if any voters exist
 		const hasVoters = Object.values(groupedVoters).some(
 			(voters) => Array.isArray(voters) && voters.length > 0
 		);
 		if (!hasVoters) {
-			section.innerHTML = `<p class="text-center text-muted">No approved voters found for any ballots.</p>`;
-			section.style.display = "block";
+			listContainer.innerHTML = `<p class="text-center text-muted">No approved voters found for any ballots.</p>`;
 			return;
 		}
 
-		// 🔹 Display title and search input
-		const title = document.createElement("h2");
-		title.textContent = "Approved Voters";
-		section.appendChild(title);
-
-		const searchInput = document.createElement("input");
-		searchInput.type = "text";
-		searchInput.id = "searchInput";
-		searchInput.placeholder = "Search voters...";
-		searchInput.classList.add("form-control", "mb-3");
-		section.appendChild(searchInput);
-
-		// 🔹 Display voters grouped by ballot ID
+		// Display voters grouped by ballot
 		Object.entries(groupedVoters).forEach(([ballotId, voters]) => {
 			if (!Array.isArray(voters) || voters.length === 0) return;
 
 			const ballotContainer = document.createElement("div");
-			ballotContainer.classList.add("mb-5");
+			ballotContainer.classList.add("mb-4");
 
 			// Ballot Title
 			const ballotTitle = document.createElement("h4");
@@ -551,13 +536,13 @@ async function fetchApprovedVoters() {
 			// Add to Blockchain Button
 			const addButton = document.createElement("button");
 			addButton.textContent = "Add to Blockchain";
-			addButton.classList.add("btn", "btn-primary", "mt-2");
-			addButton.onclick = () => registerApprovedVoters(ballotId); // Pass ballotId if needed
+			addButton.classList.add("btn", "btn-primary", "mb-2");
+			addButton.onclick = () => registerApprovedVoters(ballotId);
 			ballotContainer.appendChild(addButton);
 
 			// Table
 			const table = document.createElement("table");
-			table.classList.add("table", "mt-3");
+			table.classList.add("table", "table-striped");
 			table.innerHTML = `
                 <thead>
                     <tr>
@@ -568,12 +553,11 @@ async function fetchApprovedVoters() {
                         <th>Voter Password</th>
                     </tr>
                 </thead>
-                <tbody id="table-body-${ballotId}"></tbody>
+                <tbody></tbody>
             `;
-			ballotContainer.appendChild(table);
 
-			// Populate table
-			const tableBody = table.querySelector(`#table-body-${ballotId}`);
+			const tbody = table.querySelector("tbody");
+
 			voters.forEach((voter, index) => {
 				const passwordId = `password-${ballotId}-${index}`;
 				const row = document.createElement("tr");
@@ -587,18 +571,16 @@ async function fetchApprovedVoters() {
                         <button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">Show</button>
                     </td>
                 `;
-				tableBody.appendChild(row);
+				tbody.appendChild(row);
 			});
 
-			section.appendChild(ballotContainer);
+			ballotContainer.appendChild(table);
+			listContainer.appendChild(ballotContainer);
 		});
-
-		section.style.display = "block";
 	} catch (error) {
 		console.error("❌ Error fetching approved voters:", error);
-		const section = document.getElementById("approvedVotersSection");
-		section.innerHTML = `<p class="text-center text-danger">Error fetching approved voters.</p>`;
-		section.style.display = "block";
+		const listContainer = document.getElementById("approvedVoterList");
+		listContainer.innerHTML = `<p class="text-center text-danger">Error fetching approved voters.</p>`;
 	}
 }
 
@@ -613,8 +595,8 @@ window.togglePassword = function (passwordId, actualPassword) {
 	}
 };
 
-// ✅ Call this function when the admin dashboard loads
-window.onload = fetchApprovedVoters;
+// // ✅ Call this function when the admin dashboard loads
+// window.onload = fetchApprovedVoters;
 
 // Import Web3 if not already imported
 if (typeof Web3 === "undefined") {

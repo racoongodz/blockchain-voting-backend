@@ -408,14 +408,20 @@
 					subMenu.style.display === "block" ? "none" : "block";
 			}
 			function toggleSection(sectionId) {
-				// Hide all sections first
-				document.getElementById("ballotsSection").style.display = "none";
-				document.getElementById("pendingVotersSection").style.display = "none";
-				document.getElementById("approvedVotersSection").style.display = "none";
+    // Hide all sections first
+    document.getElementById("ballotsSection").style.display = "none";
+    document.getElementById("pendingVotersSection").style.display = "none";
+    document.getElementById("approvedVotersSection").style.display = "none";
 
-				// Show only the selected section
-				document.getElementById(sectionId).style.display = "block";
-			}
+    // Show only the selected section
+    document.getElementById(sectionId).style.display = "block";
+
+    // If showing approved voters, fetch the list
+    if (sectionId === "approvedVotersSection") {
+        fetchApprovedVoters();
+    }
+}
+
 		</script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 		<script type="module" src="admin_dashboard.js"></script>
