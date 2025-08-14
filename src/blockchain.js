@@ -770,15 +770,32 @@ export async function registerMultipleVoters(
 	if (!account) return;
 
 	try {
+		// 🔹 Simulation first: checks if transaction would succeed
 		await contract.methods
+			.registerMultipleVoters(voterAddresses, ballotId, hashedPasswords)
+			.call({ from: account });
+
+		// 🔹 If simulation succeeds, send the actual transaction
+		const receipt = await contract.methods
 			.registerMultipleVoters(voterAddresses, ballotId, hashedPasswords)
 			.send({ from: account });
 
+		console.log("Transaction successful:", receipt);
 		alert("Voters registered successfully!");
 	} catch (error) {
-		console.error("Error registering voters:", error);
+		console.error("❌ Error registering voters:", error);
+
+		// Show detailed error to the user
+		let errorMsg = "Unknown error occurred.";
+		if (error?.message) {
+			errorMsg = error.message;
+		} else if (error?.data) {
+			errorMsg = JSON.stringify(error.data);
+		}
+		alert("Error registering voters:\n" + errorMsg);
 	}
 }
+
 export async function getVotersForBallot(ballotId) {
 	const account = await connectWallet();
 	if (!account) return [];
