@@ -527,6 +527,7 @@ async function fetchApprovedVoters() {
 
 		const groupedVoters = await response.json();
 
+		// Check if any voters exist
 		const hasVoters = Object.values(groupedVoters).some(
 			(voters) => Array.isArray(voters) && voters.length > 0
 		);
@@ -554,7 +555,7 @@ async function fetchApprovedVoters() {
 			const addButton = document.createElement("button");
 			addButton.textContent = "Add to Blockchain";
 			addButton.classList.add("btn", "btn-primary", "mb-2");
-			addButton.onclick = () => registerApprovedVoters(ballotId, voters); // send only voters for this ballot
+			addButton.onclick = () => registerApprovedVoters(ballotId, voters);
 			ballotContainer.appendChild(addButton);
 
 			// Table
