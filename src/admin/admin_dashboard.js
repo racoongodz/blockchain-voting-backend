@@ -498,9 +498,10 @@ window.openRegisterVoterModal = openRegisterVoterModal;
 document.addEventListener("DOMContentLoaded", fetchPendingVoters);
 
 // Load Approved Voters
+// ✅ Load Approved Voters
 async function fetchApprovedVoters() {
 	try {
-		const { ballotIds, ballotTitles } = await getMyBallots(); // assume this now returns titles too
+		const { ballotIds, ballotTitles } = await getMyBallots(); // Assume this returns titles too
 		const section = document.getElementById("approvedVotersSection");
 		const listContainer = document.getElementById("approvedVoterList");
 
@@ -527,19 +528,19 @@ async function fetchApprovedVoters() {
 
 		const groupedVoters = await response.json();
 
-		// Check if any voters exist
-		const hasVoters = Object.values(groupedVoters).some(
-			(voters) => Array.isArray(voters) && voters.length > 0
-		);
-		if (!hasVoters) {
-			listContainer.innerHTML = `<p class="text-center text-muted">No approved voters found for any ballots.</p>`;
-			return;
-		}
-
-		// Display voters grouped by ballot
+		// Loop through each ballot
 		ballotIds.forEach((ballotId, index) => {
-			const voters = groupedVoters[ballotId];
+			let voters = groupedVoters[ballotId];
 			if (!Array.isArray(voters) || voters.length === 0) return;
+
+			// Deduplicate voters by MetaMask address
+			const uniqueVotersMap = new Map();
+			voters.forEach((v) => {
+				if (!uniqueVotersMap.has(v.metamask_address)) {
+					uniqueVotersMap.set(v.metamask_address, v);
+				}
+			});
+			voters = Array.from(uniqueVotersMap.values());
 
 			const ballotContainer = document.createElement("div");
 			ballotContainer.classList.add("mb-4");
@@ -555,6 +556,7 @@ async function fetchApprovedVoters() {
 			const addButton = document.createElement("button");
 			addButton.textContent = "Add to Blockchain";
 			addButton.classList.add("btn", "btn-primary", "mb-2");
+			// 🔹 Pass only voters for this ballot
 			addButton.onclick = () => registerApprovedVoters(ballotId, voters);
 			ballotContainer.appendChild(addButton);
 
@@ -634,25 +636,27 @@ export async function registerApprovedVoters(ballotId, voters) {
 			return;
 		}
 
-		// Ensure Web3 is initialized
-		const web3Instance = new Web3(window.ethereum);
+		// Deduplicate by MetaMask address
+		const uniqueVotersMap = new Map();
+		voters.forEach((v) => {
+			if (!uniqueVotersMap.has(v.metamask_address)) {
+				uniqueVotersMap.set(v.metamask_address, v);
+			}
+		});
+		voters = Array.from(uniqueVotersMap.values());
 
+		const web3Instance = new Web3(window.ethereum);
 		if (!web3Instance.utils) {
 			console.error("❌ Web3 utils not available!");
 			return;
 		}
 
-		// Extract voter addresses and hash passwords
 		const voterAddresses = voters.map((v) => v.metamask_address);
 		const hashedPasswords = voters.map((v) =>
 			web3Instance.utils.keccak256(v.voter_password)
 		);
 
 		console.log(`➡ Registering ${voters.length} voters for ballot ${ballotId}`);
-		console.log("Voter addresses:", voterAddresses);
-		console.log("Hashed passwords:", hashedPasswords);
-
-		// Call blockchain function
 		await registerMultipleVoters(voterAddresses, ballotId, hashedPasswords);
 
 		alert(`Voters for ballot ${ballotId} registered successfully!`);
