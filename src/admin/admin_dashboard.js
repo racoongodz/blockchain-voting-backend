@@ -911,7 +911,7 @@ async function viewResults(ballotId) {
 
 		// Get the modal elements
 		const resultsModal = document.getElementById("resultsModal1");
-		const resultsBody = document.getElementById("resultsBody");
+		const resultsBody = document.getElementById("resultsDisplay");
 
 		// Clear previous results
 		resultsBody.innerHTML = "";
