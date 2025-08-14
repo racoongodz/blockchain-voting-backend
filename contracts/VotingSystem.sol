@@ -19,7 +19,7 @@ contract VotingSystem {
     }
 
     struct Ballot {
-        string id; // Store the actual ballot ID (8-character string)
+        string id;
         string title;
         address adminAddress;
         Position[] positions;
@@ -28,24 +28,35 @@ contract VotingSystem {
 
     struct Voter {
         bytes32 hashedPassword;
-        string ballotId; // Store unhashed ballot ID
+        string ballotId;
         bool isRegistered;
         bool hasVoted;
     }
 
+    // Admin storage
     mapping(address => Admin) private admins;
     mapping(string => address) private usernameToAddress;
     mapping(address => bool) public isAdminRegistered;
-    mapping(string => Ballot) public ballots; // Use string as key to store actual Ballot ID
-    mapping(address => string[]) private adminBallots; // Store actual ballot IDs
-    mapping(address => Voter) public registeredVoters;
+    mapping(address => string[]) private adminBallots;
 
+    // Ballot storage
+    mapping(string => Ballot) public ballots;
+    mapping(string => address[]) private ballotVoters; // Voters per ballot
+
+    // Voter storage (ballot-specific)
+    mapping(string => mapping(address => Voter)) public registeredVoters;
+
+    // Voting tracking
+    mapping(bytes32 => bool) private positionVotes;
+
+    // Events
     event AdminRegistered(string username, address adminAddress);
     event BallotCreated(string ballotId, string title, address indexed admin);
     event VoterRegistered(address indexed voter, string ballotId);
-    event VoterAuthenticated(address indexed voter);
     event VoteCasted(address indexed voter, string ballotId, uint positionIndex, uint candidateIndex);
+    event VotingEnded(string ballotId, address admin);
 
+    // ---------------- Admin functions ----------------
     function registerAdmin(string memory _username, string memory _password) public {
         require(bytes(_username).length > 0, "Username required");
         require(bytes(_password).length > 0, "Password required");
@@ -53,7 +64,6 @@ contract VotingSystem {
         require(!isAdminRegistered[msg.sender], "Admin already registered");
 
         bytes32 hashedPassword = keccak256(abi.encodePacked(_password));
-
         admins[msg.sender] = Admin(_username, hashedPassword, msg.sender);
         usernameToAddress[_username] = msg.sender;
         isAdminRegistered[msg.sender] = true;
@@ -62,29 +72,29 @@ contract VotingSystem {
     }
 
     function adminLogin(string memory _username, string memory _password) 
-    public view returns (bool, string[] memory, string[] memory) 
-{
-    address adminAddr = usernameToAddress[_username];
-    require(adminAddr != address(0), "Admin not found");
-    require(adminAddr == msg.sender, "Unauthorized: Use your registered MetaMask address");
+        public view returns (bool, string[] memory, string[] memory) 
+    {
+        address adminAddr = usernameToAddress[_username];
+        require(adminAddr != address(0), "Admin not found");
+        require(adminAddr == msg.sender, "Unauthorized: Use your registered MetaMask address");
 
-    Admin storage admin = admins[adminAddr];
-    require(admin.hashedPassword == keccak256(abi.encodePacked(_password)), "Incorrect password");
+        Admin storage admin = admins[adminAddr];
+        require(admin.hashedPassword == keccak256(abi.encodePacked(_password)), "Incorrect password");
 
-    uint ballotCountForAdmin = adminBallots[adminAddr].length;
-    string[] memory ballotIds = new string[](ballotCountForAdmin);
-    string[] memory ballotTitles = new string[](ballotCountForAdmin);
+        uint ballotCount = adminBallots[adminAddr].length;
+        string[] memory ballotIds = new string[](ballotCount);
+        string[] memory ballotTitles = new string[](ballotCount);
 
-    for (uint i = 0; i < ballotCountForAdmin; i++) {
-        string memory ballotId = adminBallots[adminAddr][i];
-        ballotIds[i] = ballots[ballotId].id;
-        ballotTitles[i] = ballots[ballotId].title;
+        for (uint i = 0; i < ballotCount; i++) {
+            string memory ballotId = adminBallots[adminAddr][i];
+            ballotIds[i] = ballots[ballotId].id;
+            ballotTitles[i] = ballots[ballotId].title;
+        }
+
+        return (true, ballotIds, ballotTitles);
     }
 
-    return (true, ballotIds, ballotTitles);
-}
-
-
+    // ---------------- Ballot functions ----------------
     function createBallot(
         string memory _ballotId,
         string memory _title,
@@ -113,79 +123,101 @@ contract VotingSystem {
         }
 
         adminBallots[msg.sender].push(_ballotId);
-
         emit BallotCreated(_ballotId, _title, msg.sender);
     }
 
+    // ---------------- Voter registration ----------------
     function registerVoter(address _voter, string memory _ballotId, bytes32 _hashedPassword) public {
-    require(isAdminRegistered[msg.sender], "Only admins can register voters");
-    require(bytes(_ballotId).length == 8, "Invalid Ballot ID");
-    require(!registeredVoters[_voter].isRegistered, "Voter already registered");
-    require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
+        require(isAdminRegistered[msg.sender], "Only admins can register voters");
+        require(bytes(_ballotId).length == 8, "Invalid Ballot ID");
+        require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
+        require(!registeredVoters[_ballotId][_voter].isRegistered, "Voter already registered for this ballot");
 
-    registeredVoters[_voter] = Voter(_hashedPassword, _ballotId, true, false);
-    ballotVoters[_ballotId].push(_voter); // 🔹 Store voter address in array
+        registeredVoters[_ballotId][_voter] = Voter({
+            hashedPassword: _hashedPassword,
+            ballotId: _ballotId,
+            isRegistered: true,
+            hasVoted: false
+        });
 
-    emit VoterRegistered(_voter, _ballotId);
-}
-
-
-    function authenticateVoter(string memory _ballotId, string memory _password) 
-    public view returns (bool isAuthenticated, bool hasVoted, string memory ballotId) 
-{
-    require(bytes(_ballotId).length == 8, "Invalid Ballot ID");
-    require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
-
-    Voter storage voter = registeredVoters[msg.sender];
-    require(voter.isRegistered, "Voter not registered for any ballot");
-    require(keccak256(abi.encodePacked(voter.ballotId)) == keccak256(abi.encodePacked(_ballotId)), "Ballot ID mismatch");
-    require(voter.hashedPassword == keccak256(abi.encodePacked(_password)), "Incorrect password");
-
-    return (true, voter.hasVoted, voter.ballotId); // ✅ Returns authentication status, hasVoted status, and ballot ID
-}
-
-
-    mapping(bytes32 => bool) private positionVotes; // Tracks if a voter has voted for each position
-
-function voteMultiple(string memory _ballotId, uint[] memory _positionIndexes, uint[] memory _candidateIndexes) public {
-    require(bytes(ballots[_ballotId].id).length > 0, "Invalid ballot ID");
-    require(!ballots[_ballotId].isClosed, "Voting has ended");
-
-    Voter storage voter = registeredVoters[msg.sender];
-    require(voter.isRegistered, "Voter not registered");
-    require(keccak256(abi.encodePacked(voter.ballotId)) == keccak256(abi.encodePacked(_ballotId)), "Ballot ID mismatch");
-    require(!voter.hasVoted, "You have already completed voting");
-
-    require(_positionIndexes.length == _candidateIndexes.length, "Invalid vote data");
-
-    for (uint i = 0; i < _positionIndexes.length; i++) {
-        uint positionIndex = _positionIndexes[i];
-        uint candidateIndex = _candidateIndexes[i];
-
-        // Ensure the voter has not voted for this position
-        bytes32 voteKey = keccak256(abi.encodePacked(msg.sender, _ballotId, positionIndex));
-        require(!positionVotes[voteKey], "Already voted for this position");
-
-        // ✅ Register the vote
-        ballots[_ballotId].positions[positionIndex].candidates[candidateIndex].voteCount++;
-        positionVotes[voteKey] = true;
+        ballotVoters[_ballotId].push(_voter);
+        emit VoterRegistered(_voter, _ballotId);
     }
 
-    // ✅ Mark voter as "hasVoted" after completing all positions
-    voter.hasVoted = true;
+    function registerMultipleVoters(
+        address[] memory _voterAddresses,
+        string memory _ballotId,
+        bytes32[] memory _hashedPasswords
+    ) public {
+        require(isAdminRegistered[msg.sender], "Only admins can register voters");
+        require(bytes(_ballotId).length == 8, "Invalid Ballot ID");
+        require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
+        require(_voterAddresses.length == _hashedPasswords.length, "Mismatched array lengths");
 
-    emit VoteCasted(msg.sender, _ballotId, _positionIndexes[0], _candidateIndexes[0]); // Emit event for tracking
-}
+        for (uint i = 0; i < _voterAddresses.length; i++) {
+            require(!registeredVoters[_ballotId][_voterAddresses[i]].isRegistered, 
+                "Voter already registered for this ballot");
 
+            registeredVoters[_ballotId][_voterAddresses[i]] = Voter({
+                hashedPassword: _hashedPasswords[i],
+                ballotId: _ballotId,
+                isRegistered: true,
+                hasVoted: false
+            });
 
+            ballotVoters[_ballotId].push(_voterAddresses[i]);
+            emit VoterRegistered(_voterAddresses[i], _ballotId);
+        }
+    }
 
+    function getVotersForBallot(string memory _ballotId) public view returns (address[] memory) {
+        require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
+        return ballotVoters[_ballotId];
+    }
 
+    // ---------------- Voting ----------------
+    function authenticateVoter(string memory _ballotId, string memory _password) 
+        public view returns (bool isAuthenticated, bool hasVoted, string memory ballotId) 
+    {
+        require(bytes(_ballotId).length == 8, "Invalid Ballot ID");
+        require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
+
+        Voter storage voter = registeredVoters[_ballotId][msg.sender];
+        require(voter.isRegistered, "Voter not registered for any ballot");
+        require(keccak256(abi.encodePacked(voter.ballotId)) == keccak256(abi.encodePacked(_ballotId)), "Ballot ID mismatch");
+        require(voter.hashedPassword == keccak256(abi.encodePacked(_password)), "Incorrect password");
+
+        return (true, voter.hasVoted, voter.ballotId);
+    }
+
+    function voteMultiple(string memory _ballotId, uint[] memory _positionIndexes, uint[] memory _candidateIndexes) public {
+        require(bytes(ballots[_ballotId].id).length > 0, "Invalid ballot ID");
+        require(!ballots[_ballotId].isClosed, "Voting has ended");
+
+        Voter storage voter = registeredVoters[_ballotId][msg.sender];
+        require(voter.isRegistered, "Voter not registered");
+        require(!voter.hasVoted, "You have already completed voting");
+        require(_positionIndexes.length == _candidateIndexes.length, "Invalid vote data");
+
+        for (uint i = 0; i < _positionIndexes.length; i++) {
+            bytes32 voteKey = keccak256(abi.encodePacked(msg.sender, _ballotId, _positionIndexes[i]));
+            require(!positionVotes[voteKey], "Already voted for this position");
+
+            ballots[_ballotId].positions[_positionIndexes[i]].candidates[_candidateIndexes[i]].voteCount++;
+            positionVotes[voteKey] = true;
+        }
+
+        voter.hasVoted = true;
+        emit VoteCasted(msg.sender, _ballotId, _positionIndexes[0], _candidateIndexes[0]);
+    }
+
+    // ---------------- Utilities ----------------
     function getMyBallots() public view returns (string[] memory, string[] memory) {
-        uint ballotCountForAdmin = adminBallots[msg.sender].length;
-        string[] memory ballotIds = new string[](ballotCountForAdmin);
-        string[] memory ballotTitles = new string[](ballotCountForAdmin);
+        uint ballotCount = adminBallots[msg.sender].length;
+        string[] memory ballotIds = new string[](ballotCount);
+        string[] memory ballotTitles = new string[](ballotCount);
 
-        for (uint i = 0; i < ballotCountForAdmin; i++) {
+        for (uint i = 0; i < ballotCount; i++) {
             string memory ballotId = adminBallots[msg.sender][i];
             ballotIds[i] = ballots[ballotId].id;
             ballotTitles[i] = ballots[ballotId].title;
@@ -194,15 +226,14 @@ function voteMultiple(string memory _ballotId, uint[] memory _positionIndexes, u
         return (ballotIds, ballotTitles);
     }
 
-    // Function to get ballot details
     function getBallotDetails(string memory _ballotId)
         public
         view
         returns (string memory, string memory, string[] memory, string[][] memory)
     {
         require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
-
         Ballot storage ballot = ballots[_ballotId];
+
         uint positionCount = ballot.positions.length;
         string[] memory positionNames = new string[](positionCount);
         string[][] memory candidateNames = new string[][](positionCount);
@@ -220,80 +251,44 @@ function voteMultiple(string memory _ballotId, uint[] memory _positionIndexes, u
         return (ballot.id, ballot.title, positionNames, candidateNames);
     }
 
-    
-    mapping(string => address[]) private ballotVoters; // Stores voter addresses per ballot
+    function getResults(string memory _ballotId) 
+        public view returns (string[] memory, string[][] memory, uint[][] memory) 
+    {
+        require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
+        Ballot storage ballot = ballots[_ballotId];
 
+        uint positionCount = ballot.positions.length;
+        string[] memory positionNames = new string[](positionCount);
+        string[][] memory candidateNames = new string[][](positionCount);
+        uint[][] memory voteCounts = new uint[][](positionCount);
 
-    function registerMultipleVoters(
-    address[] memory _voterAddresses,
-    string memory _ballotId,
-    bytes32[] memory _hashedPasswords
-) public {
-    require(isAdminRegistered[msg.sender], "Only admins can register voters");
-    require(bytes(_ballotId).length == 8, "Invalid Ballot ID");
-    require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
-    require(_voterAddresses.length == _hashedPasswords.length, "Mismatched array lengths");
+        for (uint i = 0; i < positionCount; i++) {
+            positionNames[i] = ballot.positions[i].name;
+            uint candidateCount = ballot.positions[i].candidates.length;
 
-    for (uint i = 0; i < _voterAddresses.length; i++) {
-        require(!registeredVoters[_voterAddresses[i]].isRegistered, "Voter already registered");
+            candidateNames[i] = new string[](candidateCount);
+            voteCounts[i] = new uint[](candidateCount);
 
-        registeredVoters[_voterAddresses[i]] = Voter(_hashedPasswords[i], _ballotId, true, false);
-        ballotVoters[_ballotId].push(_voterAddresses[i]); // 🔹 Store voter address
-
-        emit VoterRegistered(_voterAddresses[i], _ballotId);
-    }
-}
-function getVotersForBallot(string memory _ballotId) public view returns (address[] memory) {
-    require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
-    return ballotVoters[_ballotId]; // 🔹 Return list of voter addresses
-}
-
-function getResults(string memory _ballotId) 
-    public 
-    view 
-    returns (string[] memory, string[][] memory, uint[][] memory) 
-{
-    require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
-
-    Ballot storage ballot = ballots[_ballotId];
-    uint positionCount = ballot.positions.length;
-
-    string[] memory positionNames = new string[](positionCount);
-    string[][] memory candidateNames = new string[][](positionCount);
-    uint[][] memory voteCounts = new uint[][](positionCount);
-
-    for (uint i = 0; i < positionCount; i++) {
-        positionNames[i] = ballot.positions[i].name;
-        uint candidateCount = ballot.positions[i].candidates.length;
-
-        candidateNames[i] = new string[](candidateCount);
-        voteCounts[i] = new uint[](candidateCount);
-
-        for (uint j = 0; j < candidateCount; j++) {
-            candidateNames[i][j] = ballot.positions[i].candidates[j].name;
-            voteCounts[i][j] = ballot.positions[i].candidates[j].voteCount;
+            for (uint j = 0; j < candidateCount; j++) {
+                candidateNames[i][j] = ballot.positions[i].candidates[j].name;
+                voteCounts[i][j] = ballot.positions[i].candidates[j].voteCount;
+            }
         }
+
+        return (positionNames, candidateNames, voteCounts);
     }
 
-    return (positionNames, candidateNames, voteCounts);
-}
+    function isBallotClosed(string memory _ballotId) public view returns (bool) {
+        require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
+        return ballots[_ballotId].isClosed;
+    }
 
-function isBallotClosed(string memory _ballotId) public view returns (bool) {
-    require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
-    return ballots[_ballotId].isClosed;
-}
+    function endVoting(string memory _ballotId) public {
+        require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
+        require(msg.sender == ballots[_ballotId].adminAddress, "Only the ballot creator can close voting");
+        require(!ballots[_ballotId].isClosed, "Voting is already closed");
 
-event VotingEnded(string ballotId, address admin);
-
-function endVoting(string memory _ballotId) public {
-    require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
-    require(msg.sender == ballots[_ballotId].adminAddress, "Only the ballot creator can close voting");
-    require(!ballots[_ballotId].isClosed, "Voting is already closed");
-
-    ballots[_ballotId].isClosed = true;
-
-    emit VotingEnded(_ballotId, msg.sender); // ✅ Emits event when voting ends
-}
-
-
+        ballots[_ballotId].isClosed = true;
+        emit VotingEnded(_ballotId, msg.sender);
+    }
 }

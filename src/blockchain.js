@@ -47,6 +47,111 @@ const contractABI = [
 		type: "event",
 	},
 	{
+		inputs: [
+			{
+				internalType: "string",
+				name: "_ballotId",
+				type: "string",
+			},
+			{
+				internalType: "string",
+				name: "_title",
+				type: "string",
+			},
+			{
+				internalType: "string[]",
+				name: "_positionNames",
+				type: "string[]",
+			},
+			{
+				internalType: "string[][]",
+				name: "_candidateNames",
+				type: "string[][]",
+			},
+		],
+		name: "createBallot",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+	{
+		inputs: [
+			{
+				internalType: "string",
+				name: "_ballotId",
+				type: "string",
+			},
+		],
+		name: "endVoting",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+	{
+		inputs: [
+			{
+				internalType: "string",
+				name: "_username",
+				type: "string",
+			},
+			{
+				internalType: "string",
+				name: "_password",
+				type: "string",
+			},
+		],
+		name: "registerAdmin",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+	{
+		inputs: [
+			{
+				internalType: "address[]",
+				name: "_voterAddresses",
+				type: "address[]",
+			},
+			{
+				internalType: "string",
+				name: "_ballotId",
+				type: "string",
+			},
+			{
+				internalType: "bytes32[]",
+				name: "_hashedPasswords",
+				type: "bytes32[]",
+			},
+		],
+		name: "registerMultipleVoters",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+	{
+		inputs: [
+			{
+				internalType: "address",
+				name: "_voter",
+				type: "address",
+			},
+			{
+				internalType: "string",
+				name: "_ballotId",
+				type: "string",
+			},
+			{
+				internalType: "bytes32",
+				name: "_hashedPassword",
+				type: "bytes32",
+			},
+		],
+		name: "registerVoter",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+	{
 		anonymous: false,
 		inputs: [
 			{
@@ -78,17 +183,27 @@ const contractABI = [
 		type: "event",
 	},
 	{
-		anonymous: false,
 		inputs: [
 			{
-				indexed: true,
-				internalType: "address",
-				name: "voter",
-				type: "address",
+				internalType: "string",
+				name: "_ballotId",
+				type: "string",
+			},
+			{
+				internalType: "uint256[]",
+				name: "_positionIndexes",
+				type: "uint256[]",
+			},
+			{
+				internalType: "uint256[]",
+				name: "_candidateIndexes",
+				type: "uint256[]",
 			},
 		],
-		name: "VoterAuthenticated",
-		type: "event",
+		name: "voteMultiple",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
 	},
 	{
 		anonymous: false,
@@ -237,47 +352,6 @@ const contractABI = [
 				name: "_ballotId",
 				type: "string",
 			},
-			{
-				internalType: "string",
-				name: "_title",
-				type: "string",
-			},
-			{
-				internalType: "string[]",
-				name: "_positionNames",
-				type: "string[]",
-			},
-			{
-				internalType: "string[][]",
-				name: "_candidateNames",
-				type: "string[][]",
-			},
-		],
-		name: "createBallot",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "string",
-				name: "_ballotId",
-				type: "string",
-			},
-		],
-		name: "endVoting",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "string",
-				name: "_ballotId",
-				type: "string",
-			},
 		],
 		name: "getBallotDetails",
 		outputs: [
@@ -413,68 +487,9 @@ const contractABI = [
 		inputs: [
 			{
 				internalType: "string",
-				name: "_username",
+				name: "",
 				type: "string",
 			},
-			{
-				internalType: "string",
-				name: "_password",
-				type: "string",
-			},
-		],
-		name: "registerAdmin",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "address[]",
-				name: "_voterAddresses",
-				type: "address[]",
-			},
-			{
-				internalType: "string",
-				name: "_ballotId",
-				type: "string",
-			},
-			{
-				internalType: "bytes32[]",
-				name: "_hashedPasswords",
-				type: "bytes32[]",
-			},
-		],
-		name: "registerMultipleVoters",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "_voter",
-				type: "address",
-			},
-			{
-				internalType: "string",
-				name: "_ballotId",
-				type: "string",
-			},
-			{
-				internalType: "bytes32",
-				name: "_hashedPassword",
-				type: "bytes32",
-			},
-		],
-		name: "registerVoter",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
-	{
-		inputs: [
 			{
 				internalType: "address",
 				name: "",
@@ -505,29 +520,6 @@ const contractABI = [
 			},
 		],
 		stateMutability: "view",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "string",
-				name: "_ballotId",
-				type: "string",
-			},
-			{
-				internalType: "uint256[]",
-				name: "_positionIndexes",
-				type: "uint256[]",
-			},
-			{
-				internalType: "uint256[]",
-				name: "_candidateIndexes",
-				type: "uint256[]",
-			},
-		],
-		name: "voteMultiple",
-		outputs: [],
-		stateMutability: "nonpayable",
 		type: "function",
 	},
 ];
