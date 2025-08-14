@@ -41,10 +41,12 @@
 				gap: 10px;
 				margin-bottom: 20px;
 			}
+
 			.sidebar .logo-title img {
 				height: 50px;
 			}
-			.sidebar .logo-title .system-title {
+
+			.sidebar .system-title {
 				line-height: 1.2;
 				font-size: 14px;
 				font-weight: bold;
@@ -55,6 +57,7 @@
 				list-style: none;
 				margin-bottom: 10px;
 			}
+
 			.nav-link {
 				display: block;
 				padding: 10px 12px;
@@ -67,10 +70,12 @@
 				transition: all 0.3s ease;
 				cursor: pointer;
 			}
+
 			.nav-link:hover {
 				border-color: white;
 				background-color: rgba(255, 255, 255, 0.1);
 			}
+
 			.nav-link.active {
 				border-color: #040ac7;
 				background-color: white;
@@ -81,6 +86,7 @@
 				display: none;
 				padding-left: 15px;
 			}
+
 			.sub-menu a {
 				display: block;
 				padding: 8px;
@@ -90,11 +96,14 @@
 				color: white;
 				border: 2px solid transparent;
 				transition: all 0.3s ease;
+				font-weight: bold;
 			}
+
 			.sub-menu a:hover {
 				border-color: white;
 				background-color: rgba(255, 255, 255, 0.1);
 			}
+
 			.sub-menu a.active {
 				border-color: #040ac7;
 				background-color: white;
@@ -117,6 +126,7 @@
 				gap: 15px;
 				margin-bottom: 20px;
 			}
+
 			.header h2 {
 				margin: 0;
 				font-weight: bold;
@@ -128,6 +138,7 @@
 				color: white;
 				transition: transform 0.2s;
 			}
+
 			.btn-custom:hover {
 				background-color: #0277bd;
 				transform: scale(1.05);
@@ -142,12 +153,11 @@
 				}
 			}
 
-			/* === Modal Styling === */
+			/* Modal Styling */
 			.modal-content {
 				border-radius: 12px;
 				border: none;
 				box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
-				font-family: Arial, Helvetica, sans-serif;
 			}
 
 			.modal-header {
@@ -165,22 +175,10 @@
 				font-weight: bold;
 			}
 
-			.modal-body {
-				padding: 20px;
-				font-size: 0.95rem;
-			}
-
-			.modal-footer {
-				border-top: none;
-				padding: 15px 20px;
-			}
-
-			/* Buttons inside modals */
 			.modal-footer .btn-primary {
 				background-color: #0288d1;
 				border: none;
 				font-weight: bold;
-				transition: background-color 0.2s ease-in-out;
 			}
 
 			.modal-footer .btn-primary:hover {
@@ -192,7 +190,6 @@
 				color: #333;
 				font-weight: bold;
 				border: none;
-				transition: background-color 0.2s ease-in-out;
 			}
 
 			.modal-footer .btn-secondary:hover {
@@ -215,9 +212,7 @@
 
 			<ul class="nav flex-column">
 				<li class="nav-item">
-					<a
-						class="nav-link active"
-						onclick="setActive(this); toggleSection('ballotsSection')"
+					<a class="nav-link active" data-section="ballotsSection"
 						>Ballots List</a
 					>
 				</li>
@@ -230,40 +225,36 @@
 					>
 				</li>
 				<li class="nav-item">
-					<a class="nav-link" onclick="toggleSubMenu('voterManagementMenu')"
+					<a class="nav-link" data-submenu="voterManagementMenu"
 						>Voter Management</a
 					>
 					<ul id="voterManagementMenu" class="sub-menu">
 						<li>
 							<a
 								class="nav-link"
-								onclick="setActive(this); openRegisterVoterModal()"
+								data-bs-toggle="modal"
+								data-bs-target="#registerVoterModal"
 								>Register Voters</a
 							>
 						</li>
 						<li>
-							<a
-								class="nav-link"
-								onclick="setActive(this); toggleSection('pendingVotersSection')"
+							<a class="nav-link" data-section="pendingVotersSection"
 								>Pending Approvals</a
 							>
 						</li>
 						<li>
-							<a
-								class="nav-link"
-								onclick="setActive(this); toggleSection('approvedVotersSection')"
+							<a class="nav-link" data-section="approvedVotersSection"
 								>Approved Voters</a
 							>
 						</li>
 					</ul>
 				</li>
 				<li class="nav-item">
-					<a class="nav-link" onclick="toggleSubMenu('reportsMenu')">Reports</a>
+					<a class="nav-link" data-submenu="reportsMenu">Reports</a>
 					<ul id="reportsMenu" class="sub-menu">
 						<li>
 							<a
 								class="nav-link"
-								onclick="setActive(this);"
 								data-bs-toggle="modal"
 								data-bs-target="#ballotReportModal"
 								>Ballot Details</a
@@ -272,7 +263,6 @@
 						<li>
 							<a
 								class="nav-link"
-								onclick="setActive(this);"
 								data-bs-toggle="modal"
 								data-bs-target="#registeredVotersModal"
 								>Registered Voters</a
@@ -281,7 +271,6 @@
 						<li>
 							<a
 								class="nav-link"
-								onclick="setActive(this);"
 								data-bs-toggle="modal"
 								data-bs-target="#resultsModal"
 								>Election Results</a
@@ -298,8 +287,7 @@
 				<h2>Admin Dashboard</h2>
 			</div>
 
-			<!-- Ballots Section -->
-			<div id="ballotsSection" style="display: block">
+			<div id="ballotsSection">
 				<h3>Ballots</h3>
 				<table class="table mt-3">
 					<thead>
@@ -313,7 +301,6 @@
 				</table>
 			</div>
 
-			<!-- Pending Voters Section -->
 			<div id="pendingVotersSection" style="display: none">
 				<h3>Pending Voter Approvals</h3>
 				<table class="table mt-3">
@@ -332,7 +319,6 @@
 				</table>
 			</div>
 
-			<!-- Approved Voters Section -->
 			<div id="approvedVotersSection" style="display: none">
 				<h3>Approved Voters</h3>
 				<input
@@ -345,36 +331,234 @@
 			</div>
 		</div>
 
+		<!-- Create Ballot Modal -->
+		<div
+			class="modal fade"
+			id="createBallotModal"
+			tabindex="-1"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Create Ballot</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<form>
+							<div class="mb-3">
+								<label for="ballotTitle" class="form-label">Ballot Title</label>
+								<input type="text" class="form-control" id="ballotTitle" />
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button
+							type="button"
+							class="btn btn-secondary"
+							data-bs-dismiss="modal"
+						>
+							Close
+						</button>
+						<button type="button" class="btn btn-primary">Save</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Register Voter Modal -->
+		<div
+			class="modal fade"
+			id="registerVoterModal"
+			tabindex="-1"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Register Voter</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<form>
+							<div class="mb-3">
+								<label for="voterName" class="form-label">Full Name</label>
+								<input type="text" class="form-control" id="voterName" />
+							</div>
+							<div class="mb-3">
+								<label for="voterEmail" class="form-label">Email</label>
+								<input type="email" class="form-control" id="voterEmail" />
+							</div>
+							<div class="mb-3">
+								<label for="voterAddress" class="form-label"
+									>MetaMask Address</label
+								>
+								<input type="text" class="form-control" id="voterAddress" />
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button
+							type="button"
+							class="btn btn-secondary"
+							data-bs-dismiss="modal"
+						>
+							Close
+						</button>
+						<button type="button" class="btn btn-primary">Register</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Ballot Creation Modal -->
+		<div
+			class="modal fade"
+			id="ballotCreationModal"
+			tabindex="-1"
+			aria-labelledby="ballotCreationModalLabel"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="ballotCreationModalLabel">
+							Create New Ballot
+						</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<!-- Original form content here -->
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Registered Voters Modal -->
+		<div
+			class="modal fade"
+			id="registeredVotersModal"
+			tabindex="-1"
+			aria-labelledby="registeredVotersModalLabel"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="registeredVotersModalLabel">
+							Registered Voters
+						</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<!-- Original table or list content here -->
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Reports Modal -->
+		<div
+			class="modal fade"
+			id="ballotReportModal"
+			tabindex="-1"
+			aria-labelledby="ballotReportModalLabel"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="ballotReportModalLabel">
+							Ballot Reports
+						</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<!-- Original report content here -->
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Results Modal -->
+		<div
+			class="modal fade"
+			id="resultsModal"
+			tabindex="-1"
+			aria-labelledby="resultsModalLabel"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="resultsModalLabel">Voting Results</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<!-- Original results table here -->
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-		<script type="module" src="admin_dashboard.js"></script>
-		<script type="module" src="../blockchain.js"></script>
-
 		<script>
-			function toggleSubMenu(menuId) {
-				const subMenu = document.getElementById(menuId);
-				subMenu.style.display =
-					subMenu.style.display === "block" ? "none" : "block";
-			}
+			document.addEventListener("DOMContentLoaded", () => {
+				// Sidebar active link handling
+				document.querySelectorAll(".nav-link[data-section]").forEach((link) => {
+					link.addEventListener("click", () => {
+						document
+							.querySelectorAll(".nav-link")
+							.forEach((l) => l.classList.remove("active"));
+						link.classList.add("active");
 
-			function toggleSection(sectionId) {
-				document.getElementById("ballotsSection").style.display = "none";
-				document.getElementById("pendingVotersSection").style.display = "none";
-				document.getElementById("approvedVotersSection").style.display = "none";
-				document.getElementById(sectionId).style.display = "block";
+						// Hide all sections
+						document
+							.querySelectorAll(".content > div")
+							.forEach((sec) => (sec.style.display = "none"));
+						document.getElementById(link.dataset.section).style.display =
+							"block";
+					});
+				});
 
-				if (sectionId === "approvedVotersSection") fetchApprovedVoters();
-			}
-
-			function setActive(el) {
-				document
-					.querySelectorAll(".nav-link")
-					.forEach((link) => link.classList.remove("active"));
-				el.classList.add("active");
-			}
-
-			async function fetchApprovedVoters() {
-				// Your fetch logic
-			}
+				// Submenu toggle
+				document.querySelectorAll(".nav-link[data-submenu]").forEach((link) => {
+					link.addEventListener("click", () => {
+						const submenu = document.getElementById(link.dataset.submenu);
+						submenu.style.display =
+							submenu.style.display === "block" ? "none" : "block";
+					});
+				});
+			});
 		</script>
 	</body>
 </html>
