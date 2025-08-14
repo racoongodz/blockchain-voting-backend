@@ -613,8 +613,8 @@ window.togglePassword = function (passwordId, actualPassword) {
 	}
 };
 
-// ✅ Call this function when the admin dashboard loads
-window.onload = fetchApprovedVoters;
+// // ✅ Call this function when the admin dashboard loads
+// window.onload = fetchApprovedVoters;
 
 // Import Web3 if not already imported
 if (typeof Web3 === "undefined") {
