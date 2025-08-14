@@ -896,7 +896,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	});
 });
 
-//live results
+// Live results
 window.viewResults = viewResults; // Make function accessible globally
 async function viewResults(ballotId) {
 	try {
@@ -914,28 +914,33 @@ async function viewResults(ballotId) {
 		const resultsBody = document.getElementById("resultsDisplay");
 
 		// Clear previous results
-		resultsBody.innerHTML = "";
+		resultsBody.innerHTML = "<h3>Election Results:</h3>";
 
-		// Build results table dynamically
+		// Build results dynamically
 		result.positions.forEach((position, index) => {
-			let positionRow = `<tr>
-                <td colspan="3" class="fw-bold text-primary">${position}</td>
-            </tr>`;
+			// Add position as a header
+			const positionHeader = document.createElement("h4");
+			positionHeader.className = "mt-3 text-primary";
+			positionHeader.textContent = position;
+			resultsBody.appendChild(positionHeader);
 
-			resultsBody.innerHTML += positionRow;
+			// Create list for candidates
+			const ul = document.createElement("ul");
+			ul.className = "list-group mb-3";
 
 			result.candidates[index].forEach((candidate, cIndex) => {
-				let candidateRow = `<tr>
-                    <td>${candidate}</td>
-                    <td>${result.voteCounts[index][cIndex]}</td>
-                </tr>`;
-
-				resultsBody.innerHTML += candidateRow;
+				const li = document.createElement("li");
+				li.className =
+					"list-group-item d-flex justify-content-between align-items-center";
+				li.innerHTML = `${candidate} <span class="badge bg-success rounded-pill">${result.voteCounts[index][cIndex]}</span>`;
+				ul.appendChild(li);
 			});
+
+			resultsBody.appendChild(ul);
 		});
 
 		// Show the results modal
-		let modal = new bootstrap.Modal(resultsModal);
+		const modal = new bootstrap.Modal(resultsModal);
 		modal.show();
 	} catch (error) {
 		console.error("Error fetching results:", error);
