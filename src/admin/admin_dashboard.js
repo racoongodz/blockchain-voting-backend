@@ -626,40 +626,39 @@ if (typeof Web3 === "undefined") {
 	console.error("Web3 is not loaded. Ensure Web3.js is included.");
 }
 
-// ✅ Function to hash passwords and register voters
-async function registerApprovedVoters() {
+// ✅ Function to hash passwords and register voters for a specific ballot
+export async function registerApprovedVoters(ballotId, voters) {
 	try {
-		// ✅ Ensure Web3 is initialized
+		if (!Array.isArray(voters) || voters.length === 0) {
+			alert("No approved voters for this ballot.");
+			return;
+		}
+
+		// Ensure Web3 is initialized
 		const web3Instance = new Web3(window.ethereum);
 
-		// ✅ Check if web3.utils is available
 		if (!web3Instance.utils) {
 			console.error("❌ Web3 utils not available!");
 			return;
 		}
 
-		// Fetch approved voters from MySQL
-		const response = await fetch(
-			"https://blockchain-voting-backend.onrender.com/api/getApprovedVoters"
+		// Extract voter addresses and hash passwords
+		const voterAddresses = voters.map((v) => v.metamask_address);
+		const hashedPasswords = voters.map((v) =>
+			web3Instance.utils.keccak256(v.voter_password)
 		);
-		const voters = await response.json();
 
-		if (voters.length === 0) {
-			alert("No approved voters to register.");
-			return;
-		}
+		console.log(`➡ Registering ${voters.length} voters for ballot ${ballotId}`);
+		console.log("Voter addresses:", voterAddresses);
+		console.log("Hashed passwords:", hashedPasswords);
 
-		// Extract voter details
-		const voterAddresses = voters.map((voter) => voter.metamask_address);
-		const hashedPasswords = voters.map(
-			(voter) => web3Instance.utils.keccak256(voter.voter_password) // 🔹 Hash passwords off-chain
-		);
-		const ballotId = voters[0].ballot_id; // Assuming all voters belong to the same ballot
-
-		// ✅ Call blockchain function (already handles MetaMask)
+		// Call blockchain function
 		await registerMultipleVoters(voterAddresses, ballotId, hashedPasswords);
+
+		alert(`Voters for ballot ${ballotId} registered successfully!`);
 	} catch (error) {
 		console.error("❌ Error registering voters:", error);
+		alert("Failed to register voters. Check console for details.");
 	}
 }
 
