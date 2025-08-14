@@ -501,19 +501,19 @@ document.addEventListener("DOMContentLoaded", fetchPendingVoters);
 // ✅ Load Approved Voters
 async function fetchApprovedVoters() {
 	try {
-		const { ballotIds, ballotTitles } = await getMyBallots(); // Assume this returns titles too
+		const { ballotIds, ballotTitles } = await getMyBallots();
 		const section = document.getElementById("approvedVotersSection");
 		const listContainer = document.getElementById("approvedVoterList");
 
-		listContainer.innerHTML = ""; // Clear previous list
-		section.style.display = "block"; // Show section
+		listContainer.innerHTML = "";
+		section.style.display = "block";
 
 		if (!Array.isArray(ballotIds) || ballotIds.length === 0) {
 			listContainer.innerHTML = `<p class="text-center text-muted">No ballots assigned to you.</p>`;
 			return;
 		}
 
-		// Fetch approved voters from backend
+		// Fetch all approved voters from backend
 		const response = await fetch(
 			"https://blockchain-voting-backend.onrender.com/approved-voters",
 			{
@@ -525,22 +525,11 @@ async function fetchApprovedVoters() {
 
 		if (!response.ok)
 			throw new Error(`Failed to fetch approved voters: ${response.status}`);
-
 		const groupedVoters = await response.json();
 
-		// Loop through each ballot
 		ballotIds.forEach((ballotId, index) => {
-			let voters = groupedVoters[ballotId];
-			if (!Array.isArray(voters) || voters.length === 0) return;
-
-			// Deduplicate voters by MetaMask address
-			const uniqueVotersMap = new Map();
-			voters.forEach((v) => {
-				if (!uniqueVotersMap.has(v.metamask_address)) {
-					uniqueVotersMap.set(v.metamask_address, v);
-				}
-			});
-			voters = Array.from(uniqueVotersMap.values());
+			const voters = groupedVoters[ballotId];
+			if (!voters || voters.length === 0) return;
 
 			const ballotContainer = document.createElement("div");
 			ballotContainer.classList.add("mb-4");
@@ -556,40 +545,39 @@ async function fetchApprovedVoters() {
 			const addButton = document.createElement("button");
 			addButton.textContent = "Add to Blockchain";
 			addButton.classList.add("btn", "btn-primary", "mb-2");
-			// 🔹 Pass only voters for this ballot
-			addButton.onclick = () => registerApprovedVoters(ballotId, voters);
+			addButton.onclick = () => registerApprovedVoters(ballotId, voters); // send only voters for this ballot
 			ballotContainer.appendChild(addButton);
 
 			// Table
 			const table = document.createElement("table");
 			table.classList.add("table", "table-striped");
 			table.innerHTML = `
-				<thead>
-					<tr>
-						<th>ID</th>
-						<th>Full Name</th>
-						<th>Email</th>
-						<th>MetaMask Address</th>
-						<th>Voter Password</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-			`;
-
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>MetaMask Address</th>
+                        <th>Voter Password</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
 			const tbody = table.querySelector("tbody");
+
 			voters.forEach((voter, vIndex) => {
 				const passwordId = `password-${ballotId}-${vIndex}`;
 				const row = document.createElement("tr");
 				row.innerHTML = `
-					<td>${voter.id}</td>
-					<td>${voter.full_name}</td>
-					<td>${voter.email}</td>
-					<td>${voter.metamask_address}</td>
-					<td>
-						<span id="${passwordId}" class="password-hidden">******</span>
-						<button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">Show</button>
-					</td>
-				`;
+                    <td>${voter.id}</td>
+                    <td>${voter.full_name}</td>
+                    <td>${voter.email}</td>
+                    <td>${voter.metamask_address}</td>
+                    <td>
+                        <span id="${passwordId}" class="password-hidden">******</span>
+                        <button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">Show</button>
+                    </td>
+                `;
 				tbody.appendChild(row);
 			});
 
@@ -629,43 +617,35 @@ if (typeof Web3 === "undefined") {
 }
 
 // ✅ Function to hash passwords and register voters for a specific ballot
-export async function registerApprovedVoters(ballotId, voters) {
+async function registerApprovedVoters(ballotId, voters) {
 	try {
-		if (!Array.isArray(voters) || voters.length === 0) {
-			alert("No approved voters for this ballot.");
-			return;
-		}
-
-		// Deduplicate by MetaMask address
-		const uniqueVotersMap = new Map();
-		voters.forEach((v) => {
-			if (!uniqueVotersMap.has(v.metamask_address)) {
-				uniqueVotersMap.set(v.metamask_address, v);
-			}
-		});
-		voters = Array.from(uniqueVotersMap.values());
-
 		const web3Instance = new Web3(window.ethereum);
-		if (!web3Instance.utils) {
-			console.error("❌ Web3 utils not available!");
+
+		// Filter only new voters that are not yet on-chain
+		const newVoters = voters.filter((v) => !v.isOnChain); // `isOnChain` should be tracked in backend
+
+		if (newVoters.length === 0) {
+			alert("No new voters to register for this ballot.");
 			return;
 		}
 
-		const voterAddresses = voters.map((v) => v.metamask_address);
-		const hashedPasswords = voters.map((v) =>
+		const voterAddresses = newVoters.map((v) => v.metamask_address);
+		const hashedPasswords = newVoters.map((v) =>
 			web3Instance.utils.keccak256(v.voter_password)
 		);
 
-		console.log(`➡ Registering ${voters.length} voters for ballot ${ballotId}`);
+		// Call blockchain function
 		await registerMultipleVoters(voterAddresses, ballotId, hashedPasswords);
 
-		alert(`Voters for ballot ${ballotId} registered successfully!`);
+		alert("✅ Voters registered successfully!");
+
+		// Optionally: mark them as on-chain to avoid double-sending
+		newVoters.forEach((v) => (v.isOnChain = true));
 	} catch (error) {
 		console.error("❌ Error registering voters:", error);
-		alert("Failed to register voters. Check console for details.");
+		alert("Transaction failed. Check console for details.");
 	}
 }
-
 // Search filter function
 function filterTables() {
 	const searchValue = document
