@@ -11,60 +11,112 @@
 		<style>
 			body {
 				background-color: #e3f2fd;
+				font-family: Arial, Helvetica, sans-serif;
+				margin: 0;
+				padding: 0;
 				display: flex;
+				height: 100vh;
+				overflow: hidden;
 			}
+
+			/* Sidebar */
 			.sidebar {
 				width: 250px;
-				height: 100vh;
-				background: #0288d1;
+				background-color: #0288d1;
 				color: white;
+				height: 100%;
 				padding: 20px;
 				position: fixed;
+				overflow-y: auto;
 			}
-			.sidebar h2 {
-				text-align: center;
+
+			.sidebar .logo-title {
+				display: flex;
+				align-items: center;
+				gap: 10px;
 				margin-bottom: 30px;
 			}
+			.sidebar .logo-title img {
+				height: 50px;
+			}
+			.sidebar .logo-title .system-title {
+				line-height: 1.2;
+				font-size: 16px;
+				font-weight: bold;
+			}
+
+			/* Nav items */
 			.nav-item {
 				list-style: none;
 				margin-bottom: 10px;
 			}
 			.nav-link {
-				color: white;
-				padding: 10px;
 				display: block;
-				text-decoration: none;
-				transition: background 0.3s, color 0.3s;
+				padding: 10px 12px;
 				border-radius: 5px;
+				text-decoration: none;
+				font-weight: bold;
+				font-size: 14px;
+				color: white;
+				border: 2px solid transparent;
+				transition: all 0.3s ease;
 				cursor: pointer;
 			}
-			.nav-link:hover,
-			.sub-menu a:hover {
-				background: #0277bd;
-				color: white;
+			.nav-link:hover {
+				border-color: white;
+				background-color: rgba(255, 255, 255, 0.1);
+			}
+			.nav-link.active {
+				border-color: #ffeb3b;
+				background-color: rgba(255, 235, 59, 0.2);
+				color: #ffeb3b;
 			}
 			.sub-menu {
 				display: none;
-				padding-left: 20px;
-			}
-			.nav-item.active .sub-menu {
-				display: block;
+				padding-left: 15px;
 			}
 			.sub-menu a {
-				color: white;
-				padding: 8px;
 				display: block;
+				padding: 8px;
+				border-radius: 5px;
 				text-decoration: none;
+				font-size: 14px;
+				color: white;
+				border: 2px solid transparent;
+				transition: all 0.3s ease;
 			}
+			.sub-menu a:hover {
+				border-color: white;
+				background-color: rgba(255, 255, 255, 0.1);
+			}
+			.sub-menu a.active {
+				border-color: #ffeb3b;
+				background-color: rgba(255, 235, 59, 0.2);
+				color: #ffeb3b;
+			}
+
+			/* Content */
 			.content {
-				margin-left: 260px;
+				margin-left: 250px;
 				padding: 20px;
-				width: 100%;
-			}
-			.fade-in {
-				opacity: 0;
+				overflow-y: auto;
+				height: 100vh;
+				width: calc(100% - 250px);
 				animation: fadeIn 1.5s forwards;
 			}
+
+			.header {
+				display: flex;
+				align-items: center;
+				gap: 15px;
+				margin-bottom: 20px;
+			}
+			.header h2 {
+				margin: 0;
+				font-weight: bold;
+				font-size: 24px;
+			}
+
 			@keyframes fadeIn {
 				from {
 					opacity: 0;
@@ -73,13 +125,101 @@
 					opacity: 1;
 				}
 			}
+			/* Content */
+			.content {
+				margin-left: 250px;
+				padding: 20px;
+				overflow-y: auto;
+				height: 100vh;
+				width: calc(100% - 250px);
+				animation: fadeIn 1.5s forwards;
+			}
+
+			.header {
+				display: flex;
+				align-items: center;
+				gap: 15px;
+				margin-bottom: 20px;
+			}
+			.header h2 {
+				margin: 0;
+				font-weight: bold;
+				font-size: 24px;
+			}
+
+			.btn-custom {
+				background-color: #0288d1;
+				color: white;
+				transition: transform 0.2s;
+				font-weight: bold;
+			}
+			.btn-custom:hover {
+				background-color: #0277bd;
+				transform: scale(1.05);
+			}
+
+			/* Modal Styling - Uniform with Theme */
+			.modal-content {
+				border-radius: 10px;
+				overflow: hidden;
+			}
+			.modal-header {
+				background-color: #0288d1;
+				color: white;
+				font-weight: bold;
+				border-bottom: 3px solid #0277bd;
+			}
+			.modal-title {
+				font-weight: bold;
+				font-size: 1.2rem;
+			}
+			.modal-body {
+				font-size: 1rem;
+				color: #333;
+			}
+			.modal-footer .btn {
+				font-weight: bold;
+				padding: 8px 16px;
+				border-radius: 5px;
+				transition: all 0.2s ease;
+			}
+			.modal-footer .btn-primary {
+				background-color: #0288d1;
+				border-color: #0288d1;
+			}
+			.modal-footer .btn-primary:hover {
+				background-color: #0277bd;
+				border-color: #0277bd;
+				transform: scale(1.05);
+			}
+			.modal-footer .btn-secondary {
+				background-color: #ccc;
+				border-color: #bbb;
+				color: #333;
+			}
+			.modal-footer .btn-secondary:hover {
+				background-color: #bbb;
+				border-color: #aaa;
+				transform: scale(1.05);
+			}
 		</style>
 	</head>
 	<body>
 		<!-- Sidebar -->
 		<div class="sidebar fade-in">
-			<h2>Blockchain Voting System</h2>
-			<h3>Admin Dashboard</h3>
+			<div class="logo-title">
+				<img
+					src="https://iciap.edu.ph/ici/assets/images/ici/logo.png"
+					alt="ICI Logo"
+				/>
+				<div class="system-title">
+					Blockchain-Based <br />Voting System <br />for Elections at ICI
+				</div>
+			</div>
+			<div class="header">
+				<h2>Admin Dashboard</h2>
+			</div>
+
 			<ul class="nav flex-column">
 				<li class="nav-item">
 					<a class="nav-link" onclick="toggleSection('ballotsSection')"
@@ -124,14 +264,14 @@
 					<a class="nav-link" onclick="toggleSubMenu('reportsMenu')">Reports</a>
 					<ul id="reportsMenu" class="sub-menu">
 						<li>
-							<button
+							<a
+								href="#"
 								id="openBallotReportModal"
-								class="btn btn-info"
 								data-bs-toggle="modal"
 								data-bs-target="#ballotReportModal"
 							>
 								Ballot Details
-							</button>
+							</a>
 						</li>
 						<li>
 							<a
@@ -156,6 +296,7 @@
 		</div>
 
 		<!-- Ballots List Section -->
+
 		<div id="ballotsSection" class="content fade-in" style="display: block">
 			<h3 class="mt-4">Ballots</h3>
 			<table class="table mt-3">
