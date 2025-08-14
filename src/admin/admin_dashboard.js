@@ -500,7 +500,7 @@ document.addEventListener("DOMContentLoaded", fetchPendingVoters);
 // Load Approved Voters
 async function fetchApprovedVoters() {
 	try {
-		const { ballotIds } = await getMyBallots();
+		const { ballotIds, ballotTitles } = await getMyBallots(); // assume this now returns titles too
 		const section = document.getElementById("approvedVotersSection");
 		const listContainer = document.getElementById("approvedVoterList");
 
@@ -527,7 +527,6 @@ async function fetchApprovedVoters() {
 
 		const groupedVoters = await response.json();
 
-		// Check if any voters exist
 		const hasVoters = Object.values(groupedVoters).some(
 			(voters) => Array.isArray(voters) && voters.length > 0
 		);
@@ -537,7 +536,8 @@ async function fetchApprovedVoters() {
 		}
 
 		// Display voters grouped by ballot
-		Object.entries(groupedVoters).forEach(([ballotId, voters]) => {
+		ballotIds.forEach((ballotId, index) => {
+			const voters = groupedVoters[ballotId];
 			if (!Array.isArray(voters) || voters.length === 0) return;
 
 			const ballotContainer = document.createElement("div");
@@ -545,47 +545,48 @@ async function fetchApprovedVoters() {
 
 			// Ballot Title
 			const ballotTitle = document.createElement("h4");
-			ballotTitle.textContent = `Ballot ID: ${ballotId}`;
+			ballotTitle.textContent = ballotTitles?.[index]
+				? `${ballotTitles[index]} (ID: ${ballotId})`
+				: `Ballot ID: ${ballotId}`;
 			ballotContainer.appendChild(ballotTitle);
 
 			// Add to Blockchain Button
 			const addButton = document.createElement("button");
 			addButton.textContent = "Add to Blockchain";
 			addButton.classList.add("btn", "btn-primary", "mb-2");
-			addButton.onclick = () => registerApprovedVoters(ballotId);
+			addButton.onclick = () => registerApprovedVoters(ballotId, voters); // send only voters for this ballot
 			ballotContainer.appendChild(addButton);
 
 			// Table
 			const table = document.createElement("table");
 			table.classList.add("table", "table-striped");
 			table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Full Name</th>
-                        <th>Email</th>
-                        <th>MetaMask Address</th>
-                        <th>Voter Password</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            `;
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Full Name</th>
+						<th>Email</th>
+						<th>MetaMask Address</th>
+						<th>Voter Password</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			`;
 
 			const tbody = table.querySelector("tbody");
-
-			voters.forEach((voter, index) => {
-				const passwordId = `password-${ballotId}-${index}`;
+			voters.forEach((voter, vIndex) => {
+				const passwordId = `password-${ballotId}-${vIndex}`;
 				const row = document.createElement("tr");
 				row.innerHTML = `
-                    <td>${voter.id}</td>
-                    <td>${voter.full_name}</td>
-                    <td>${voter.email}</td>
-                    <td>${voter.metamask_address}</td>
-                    <td>
-                        <span id="${passwordId}" class="password-hidden">******</span>
-                        <button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">Show</button>
-                    </td>
-                `;
+					<td>${voter.id}</td>
+					<td>${voter.full_name}</td>
+					<td>${voter.email}</td>
+					<td>${voter.metamask_address}</td>
+					<td>
+						<span id="${passwordId}" class="password-hidden">******</span>
+						<button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">Show</button>
+					</td>
+				`;
 				tbody.appendChild(row);
 			});
 
@@ -598,6 +599,12 @@ async function fetchApprovedVoters() {
 		listContainer.innerHTML = `<p class="text-center text-danger">Error fetching approved voters.</p>`;
 	}
 }
+
+// Password toggle helper
+window.togglePassword = (id, password) => {
+	const el = document.getElementById(id);
+	el.textContent = el.textContent === "******" ? password : "******";
+};
 
 // 🔹 Function to toggle password visibility (attach to global window)
 window.togglePassword = function (passwordId, actualPassword) {
