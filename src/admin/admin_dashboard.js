@@ -8,6 +8,7 @@ import {
 	endVoting,
 	isBallotClosed,
 } from "../blockchain.js";
+window.fetchApprovedVoters = fetchApprovedVoters;
 
 async function displayBallots() {
 	const ballotsList = document.getElementById("ballotsList");
