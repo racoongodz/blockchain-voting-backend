@@ -1950,12 +1950,12 @@
     "27568": {
       "events": {},
       "links": {},
-      "address": "0x30F0931E7b05d06fC6325Ce8f71b4ec4C577ADB9",
-      "transactionHash": "0x6f309f105b8a5b22342207cede0ca3625548fb5f9eab205b2bdc7f9af6cb3f37"
+      "address": "0x245C4FDE8D3f255Da2028Ac9a399A43F3d165df5",
+      "transactionHash": "0x0596d284b748d892b0d4f7765c4aa1781656e515e196ae7b62c2f694d4d1baeb"
     }
   },
   "schemaVersion": "3.4.14",
-  "updatedAt": "2025-08-13T10:16:19.684Z",
+  "updatedAt": "2025-08-14T14:27:12.549Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",

@@ -525,7 +525,7 @@ const contractABI = [
 ];
 
 // Smart contract address (Update after deployment)
-const contractAddress = "0xdC988e7533adA136D26c9D4257903ed152226Ae8";
+const contractAddress = "0xEB026Ce6D1C18D6ce9dE97f725E5A99b32ccc579";
 
 // Initialize contract
 const contract = new web3.eth.Contract(contractABI, contractAddress);
