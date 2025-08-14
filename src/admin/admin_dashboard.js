@@ -363,23 +363,26 @@ async function fetchPendingVoters() {
 		// 🔹 Get ballot IDs from the blockchain dynamically
 		const { ballotIds } = await getMyBallots();
 
+		// ✅ Remove duplicate ballot IDs just in case
+		const uniqueBallotIds = [...new Set(ballotIds)];
+
 		// ✅ Get the table body and clear previous content
 		const tableBody = document.getElementById("pendingVotersTable");
 		tableBody.innerHTML = "";
 
 		// 🔹 If no ballots are assigned to the admin, show message
-		if (!Array.isArray(ballotIds) || ballotIds.length === 0) {
+		if (!Array.isArray(uniqueBallotIds) || uniqueBallotIds.length === 0) {
 			tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No ballots assigned to you.</td></tr>`;
 			return;
 		}
 
-		// 🔹 Fetch pending voters using fetched ballot IDs
+		// 🔹 Fetch pending voters using unique ballot IDs
 		const response = await fetch(
 			"https://blockchain-voting-backend.onrender.com/pending-voters",
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ ballot_ids: ballotIds }),
+				body: JSON.stringify({ ballot_ids: uniqueBallotIds }),
 			}
 		);
 
@@ -395,8 +398,12 @@ async function fetchPendingVoters() {
 			return;
 		}
 
-		// ✅ Populate table with results
+		// ✅ Remove duplicates by voter ID
+		const seen = new Set();
 		data.forEach((voter) => {
+			if (seen.has(voter.id)) return; // Skip if already added
+			seen.add(voter.id);
+
 			const row = document.createElement("tr");
 			row.innerHTML = `
 				<td>${voter.id}</td>
