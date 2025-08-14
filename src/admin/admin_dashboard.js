@@ -545,7 +545,7 @@ async function fetchApprovedVoters() {
 			const addButton = document.createElement("button");
 			addButton.textContent = "Add to Blockchain";
 			addButton.classList.add("btn", "btn-primary", "mb-2");
-			addButton.onclick = () => registerApprovedVoters(ballotId, voters); // send only voters for this ballot
+			addButton.onclick = () => registerApprovedVoters(ballotId); // send only voters for this ballot
 			ballotContainer.appendChild(addButton);
 
 			// Table
@@ -616,36 +616,66 @@ if (typeof Web3 === "undefined") {
 	console.error("Web3 is not loaded. Ensure Web3.js is included.");
 }
 
-// ✅ Function to hash passwords and register voters for a specific ballot
-async function registerApprovedVoters(ballotId, voters) {
+// ✅ Register approved voters for a specific ballot
+async function registerApprovedVoters(ballotId) {
 	try {
 		const web3Instance = new Web3(window.ethereum);
-
-		// Filter only new voters that are not yet on-chain
-		const newVoters = voters.filter((v) => !v.isOnChain); // `isOnChain` should be tracked in backend
-
-		if (newVoters.length === 0) {
-			alert("No new voters to register for this ballot.");
+		if (!web3Instance.utils) {
+			console.error("❌ Web3 utils not available!");
 			return;
 		}
 
-		const voterAddresses = newVoters.map((v) => v.metamask_address);
-		const hashedPasswords = newVoters.map((v) =>
+		// Fetch approved voters for this ballot from backend
+		const response = await fetch(
+			"https://blockchain-voting-backend.onrender.com/approved-voters",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ ballot_ids: [ballotId] }), // only this ballot
+			}
+		);
+		const groupedVoters = await response.json();
+		const voters = groupedVoters[ballotId] || [];
+
+		if (!voters.length) {
+			alert("No approved voters to register for this ballot.");
+			return;
+		}
+
+		// Filter out voters already on-chain
+		const unregisteredVoters = voters.filter((v) => !v.isOnChain);
+		if (!unregisteredVoters.length) {
+			alert(
+				"All voters for this ballot are already registered on the blockchain."
+			);
+			return;
+		}
+
+		// Prepare addresses and hashed passwords
+		const voterAddresses = unregisteredVoters.map((v) => v.metamask_address);
+		const hashedPasswords = unregisteredVoters.map((v) =>
 			web3Instance.utils.keccak256(v.voter_password)
 		);
 
 		// Call blockchain function
 		await registerMultipleVoters(voterAddresses, ballotId, hashedPasswords);
 
-		alert("✅ Voters registered successfully!");
+		alert(
+			`Successfully registered ${unregisteredVoters.length} voter(s) for ballot ${ballotId}.`
+		);
 
-		// Optionally: mark them as on-chain to avoid double-sending
-		newVoters.forEach((v) => (v.isOnChain = true));
+		// Optionally, mark them as on-chain in your backend
+		await fetch("https://blockchain-voting-backend.onrender.com/mark-onchain", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ voterIds: unregisteredVoters.map((v) => v.id) }),
+		});
 	} catch (error) {
 		console.error("❌ Error registering voters:", error);
 		alert("Transaction failed. Check console for details.");
 	}
 }
+
 // Search filter function
 function filterTables() {
 	const searchValue = document
