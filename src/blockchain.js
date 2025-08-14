@@ -766,33 +766,64 @@ export async function registerMultipleVoters(
 	ballotId,
 	hashedPasswords
 ) {
-	const account = await connectWallet();
-	if (!account) return;
-
 	try {
-		// 🔹 Simulation first: checks if transaction would succeed
-		await contract.methods
-			.registerMultipleVoters(voterAddresses, ballotId, hashedPasswords)
-			.call({ from: account });
+		const account = await connectWallet();
+		if (!account) {
+			console.error("❌ No wallet connected.");
+			alert("Please connect your wallet first.");
+			return;
+		}
 
-		// 🔹 If simulation succeeds, send the actual transaction
+		// Pre-check: array lengths
+		if (!Array.isArray(voterAddresses) || voterAddresses.length === 0) {
+			console.error(
+				"❌ voterAddresses array is empty or invalid:",
+				voterAddresses
+			);
+			alert("No voters selected to register.");
+			return;
+		}
+
+		if (
+			!Array.isArray(hashedPasswords) ||
+			hashedPasswords.length !== voterAddresses.length
+		) {
+			console.error(
+				"❌ hashedPasswords array is invalid or does not match voterAddresses length:",
+				hashedPasswords
+			);
+			alert("Password array is invalid or does not match voter list.");
+			return;
+		}
+
+		if (!ballotId) {
+			console.error("❌ ballotId is missing or invalid:", ballotId);
+			alert("Ballot ID is invalid.");
+			return;
+		}
+
+		console.log("➡ Attempting to register voters:");
+		console.log("Account:", account);
+		console.log("Ballot ID:", ballotId);
+		console.log("Voter addresses:", voterAddresses);
+		console.log("Hashed passwords:", hashedPasswords);
+
+		// Send transaction
 		const receipt = await contract.methods
 			.registerMultipleVoters(voterAddresses, ballotId, hashedPasswords)
 			.send({ from: account });
 
-		console.log("Transaction successful:", receipt);
+		console.log("✅ Transaction successful:", receipt);
 		alert("Voters registered successfully!");
 	} catch (error) {
+		// Detailed error logging
 		console.error("❌ Error registering voters:", error);
 
-		// Show detailed error to the user
-		let errorMsg = "Unknown error occurred.";
 		if (error?.message) {
-			errorMsg = error.message;
-		} else if (error?.data) {
-			errorMsg = JSON.stringify(error.data);
+			alert("Transaction failed: " + error.message);
+		} else {
+			alert("Transaction failed. Check console for details.");
 		}
-		alert("Error registering voters:\n" + errorMsg);
 	}
 }
 
