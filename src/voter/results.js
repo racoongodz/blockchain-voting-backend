@@ -18,15 +18,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 	const results = await getVotingResults(ballotId);
 
-	if (results.positions.length === 0) {
+	if (!results || results.positions.length === 0) {
 		resultsContainer.innerHTML = "<p>No results found for this ballot.</p>";
 		return;
 	}
 
-	let resultsHTML = "<h4>Results</h4>";
+	// Display Ballot ID as title
+	const ballotTitle = `Ballot ID: ${ballotId}`;
+	let resultsHTML = `<h4>${ballotTitle}</h4>`;
 
 	results.positions.forEach((position, index) => {
-		resultsHTML += `<h5>${position}</h5><ul class="list-group">`;
+		resultsHTML += `<h5 class="mt-3">${position}</h5><ul class="list-group">`;
 		results.candidates[index].forEach((candidate, cIndex) => {
 			resultsHTML += `<li class="list-group-item d-flex justify-content-between">
                 ${candidate} <span class="badge bg-primary">${results.voteCounts[index][cIndex]} votes</span>
