@@ -399,6 +399,11 @@ async function fetchPendingVoters() {
 		}
 
 		data.forEach((voter) => {
+			// ✅ If id_photo is a full URL, use it directly. Otherwise, prepend backend path.
+			const photoUrl = voter.id_photo.startsWith("http")
+				? voter.id_photo
+				: `https://blockchain-voting-backend.onrender.com/uploads/${voter.id_photo}`;
+
 			const row = document.createElement("tr");
 			row.innerHTML = `
 				<td>${voter.id}</td>
@@ -407,8 +412,8 @@ async function fetchPendingVoters() {
 				<td>${voter.email}</td>
 				<td>${voter.metamask_address}</td>
 				<td>
-					<a href="https://blockchain-voting-backend.onrender.com/uploads/${voter.id_photo}" target="_blank">
-						<img src="https://blockchain-voting-backend.onrender.com/uploads/${voter.id_photo}" alt="ID Photo" width="100">
+					<a href="${photoUrl}" target="_blank">
+						<img src="${photoUrl}" alt="ID Photo" width="100">
 					</a>
 				</td>
 				<td>
@@ -424,6 +429,7 @@ async function fetchPendingVoters() {
 		tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error fetching pending voters.</td></tr>`;
 	}
 }
+
 // // ✅ Prevent multiple runs on page load
 // window.onload = () => {
 // 	if (!window.fetchPendingVotersLoaded) {
