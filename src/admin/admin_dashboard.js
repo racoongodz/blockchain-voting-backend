@@ -425,7 +425,7 @@ async function fetchPendingVoters() {
 	}
 }
 
-window.onload = fetchPendingVoters;
+// window.onload = fetchPendingVoters;
 
 // Approve Voter
 async function approveVoter(voterId) {
