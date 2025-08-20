@@ -740,7 +740,7 @@ async function registerApprovedVoters(ballotId) {
 // Search filter function
 function filterTables() {
 	const searchValue = document
-		.getElementById("searchInput")
+		.getElementById("searchVoter")
 		.value.toLowerCase();
 	const tables = document.querySelectorAll("tbody");
 
