@@ -868,7 +868,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	}
 
 	// Open modal and load ballots
-	registeredVotersModal.addEventListener("click", async function () {
+	registeredVotersModal.addEventListener("show.bs.modal", async function () {
 		await loadAdminBallots();
 	});
 
