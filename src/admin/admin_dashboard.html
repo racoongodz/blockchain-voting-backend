@@ -653,6 +653,22 @@
 		<!-- -------------------------------------------------------------------------------------------------------- -->
 
 		<script>
+			// 🔍 Search only inside Approved Voters tables (grouped by ballot)
+			function filterApprovedVoters() {
+				const searchValue = document
+					.getElementById("searchVoter")
+					.value.toLowerCase();
+				const tables = document.querySelectorAll(
+					"#approvedVotersSection tbody"
+				);
+
+				tables.forEach((tbody) => {
+					Array.from(tbody.getElementsByTagName("tr")).forEach((row) => {
+						const text = row.innerText.toLowerCase();
+						row.style.display = text.includes(searchValue) ? "" : "none";
+					});
+				});
+			}
 			// Expose functions globally
 			window.toggleSubMenu = function (menuId) {
 				const subMenu = document.getElementById(menuId);

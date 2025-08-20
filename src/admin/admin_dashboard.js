@@ -752,21 +752,6 @@ function filterTables() {
 	});
 }
 
-// 🔍 Search only inside Approved Voters tables (grouped by ballot)
-function filterApprovedVoters() {
-	const searchValue = document
-		.getElementById("searchVoter")
-		.value.toLowerCase();
-	const tables = document.querySelectorAll("#approvedVotersSection tbody");
-
-	tables.forEach((tbody) => {
-		Array.from(tbody.getElementsByTagName("tr")).forEach((row) => {
-			const text = row.innerText.toLowerCase();
-			row.style.display = text.includes(searchValue) ? "" : "none";
-		});
-	});
-}
-
 // Function to delete voter from database
 async function deleteVoter(voterId, ballotId, button) {
 	if (!confirm("Are you sure you want to delete this voter?")) return;
