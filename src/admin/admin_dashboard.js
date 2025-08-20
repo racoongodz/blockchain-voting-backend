@@ -960,12 +960,26 @@ async function viewResults(ballotId) {
 			return;
 		}
 
+		// 🔹 Fetch ballot titles from getMyBallots
+		const { ballotIds, ballotTitles } = await getMyBallots();
+		let ballotTitle = "Ballot";
+		const index = ballotIds.findIndex((id) => id == ballotId);
+		if (index !== -1 && ballotTitles[index]) {
+			ballotTitle = ballotTitles[index];
+		}
+
 		// Get the live results modal elements
 		const liveResultsModal = document.getElementById("liveResultsModal");
 		const resultsBody = document.getElementById("liveResultsDisplay");
 
 		// Clear previous results
-		resultsBody.innerHTML = "<h3>Live Election Results:</h3>";
+		resultsBody.innerHTML = "";
+
+		// 🔹 Add ballot title + ID as heading
+		const ballotHeader = document.createElement("h3");
+		ballotHeader.className = "mb-3 text-center text-dark";
+		ballotHeader.textContent = `${ballotTitle} (ID: ${ballotId})`;
+		resultsBody.appendChild(ballotHeader);
 
 		// Build results dynamically
 		result.positions.forEach((position, index) => {
