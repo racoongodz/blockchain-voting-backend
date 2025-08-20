@@ -527,6 +527,10 @@ async function fetchApprovedVoters() {
 			throw new Error(`Failed to fetch approved voters: ${response.status}`);
 		const groupedVoters = await response.json();
 
+		// Track all containers & toggle buttons
+		const allContainers = [];
+		const allButtons = [];
+
 		ballotIds.forEach((ballotId, index) => {
 			const voters = groupedVoters[ballotId];
 			if (!voters || voters.length === 0) return;
@@ -534,54 +538,101 @@ async function fetchApprovedVoters() {
 			const ballotContainer = document.createElement("div");
 			ballotContainer.classList.add("mb-4");
 
+			// 🔹 Title + Toggle Button Container
+			const titleContainer = document.createElement("div");
+			titleContainer.classList.add(
+				"d-flex",
+				"justify-content-between",
+				"align-items-center",
+				"mb-2"
+			);
+
 			// Ballot Title
 			const ballotTitle = document.createElement("h4");
 			ballotTitle.textContent = ballotTitles?.[index]
 				? `${ballotTitles[index]} (ID: ${ballotId})`
 				: `Ballot ID: ${ballotId}`;
-			ballotContainer.appendChild(ballotTitle);
+
+			// Toggle Button
+			const toggleButton = document.createElement("button");
+			toggleButton.textContent = "Show Voters";
+			toggleButton.classList.add(
+				"btn",
+				"btn-sm",
+				"btn-outline-secondary",
+				"ms-2"
+			);
+
+			// Container for voters table + add button
+			const votersContainer = document.createElement("div");
+			votersContainer.style.display = "none"; // 🔹 hidden by default
 
 			// Add to Blockchain Button
 			const addButton = document.createElement("button");
 			addButton.textContent = "Add to Blockchain";
 			addButton.classList.add("btn", "btn-primary", "mb-2");
-			addButton.onclick = () => registerApprovedVoters(ballotId); // send only voters for this ballot
-			ballotContainer.appendChild(addButton);
+			addButton.onclick = () => registerApprovedVoters(ballotId);
+			votersContainer.appendChild(addButton);
 
 			// Table
 			const table = document.createElement("table");
 			table.classList.add("table", "table-striped");
 			table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Full Name</th>
-                        <th>Email</th>
-                        <th>MetaMask Address</th>
-                        <th>Voter Password</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            `;
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Full Name</th>
+						<th>Email</th>
+						<th>MetaMask Address</th>
+						<th>Voter Password</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			`;
 			const tbody = table.querySelector("tbody");
 
 			voters.forEach((voter, vIndex) => {
 				const passwordId = `password-${ballotId}-${vIndex}`;
 				const row = document.createElement("tr");
 				row.innerHTML = `
-                    <td>${voter.id}</td>
-                    <td>${voter.full_name}</td>
-                    <td>${voter.email}</td>
-                    <td>${voter.metamask_address}</td>
-                    <td>
-                        <span id="${passwordId}" class="password-hidden">******</span>
-                        <button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">Show</button>
-                    </td>
-                `;
+					<td>${voter.id}</td>
+					<td>${voter.full_name}</td>
+					<td>${voter.email}</td>
+					<td>${voter.metamask_address}</td>
+					<td>
+						<span id="${passwordId}" class="password-hidden">******</span>
+						<button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">Show</button>
+					</td>
+				`;
 				tbody.appendChild(row);
 			});
+			votersContainer.appendChild(table);
 
-			ballotContainer.appendChild(table);
+			// 🔹 Accordion Toggle functionality
+			toggleButton.onclick = () => {
+				const isHidden = votersContainer.style.display === "none";
+
+				// Hide all others
+				allContainers.forEach((c) => (c.style.display = "none"));
+				allButtons.forEach((b) => (b.textContent = "Show Voters"));
+
+				// Show current if it was hidden
+				if (isHidden) {
+					votersContainer.style.display = "block";
+					toggleButton.textContent = "Hide Voters";
+				}
+			};
+
+			// Track containers & buttons for accordion behavior
+			allContainers.push(votersContainer);
+			allButtons.push(toggleButton);
+
+			// Append
+			titleContainer.appendChild(ballotTitle);
+			titleContainer.appendChild(toggleButton);
+
+			ballotContainer.appendChild(titleContainer);
+			ballotContainer.appendChild(votersContainer);
 			listContainer.appendChild(ballotContainer);
 		});
 	} catch (error) {
