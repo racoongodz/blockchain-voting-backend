@@ -960,12 +960,12 @@ async function viewResults(ballotId) {
 			return;
 		}
 
-		// Get the modal elements
-		const resultsModal = document.getElementById("resultsModal");
-		const resultsBody = document.getElementById("resultsDisplay");
+		// Get the live results modal elements
+		const liveResultsModal = document.getElementById("liveResultsModal");
+		const resultsBody = document.getElementById("liveResultsDisplay");
 
 		// Clear previous results
-		resultsBody.innerHTML = "<h3>Election Results:</h3>";
+		resultsBody.innerHTML = "<h3>Live Election Results:</h3>";
 
 		// Build results dynamically
 		result.positions.forEach((position, index) => {
@@ -990,8 +990,8 @@ async function viewResults(ballotId) {
 			resultsBody.appendChild(ul);
 		});
 
-		// Show the results modal
-		const modal = new bootstrap.Modal(resultsModal);
+		// Show the live results modal
+		const modal = new bootstrap.Modal(liveResultsModal);
 		modal.show();
 	} catch (error) {
 		console.error("Error fetching results:", error);
