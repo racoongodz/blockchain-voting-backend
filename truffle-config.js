@@ -1,3 +1,5 @@
+const HDWalletProvider = require("@truffle/hdwallet-provider");
+
 module.exports = {
 	networks: {
 		development: {
@@ -5,20 +7,23 @@ module.exports = {
 			port: 7545,
 			network_id: "*",
 		},
+
+		buildbear: {
+			provider: () =>
+				new HDWalletProvider(
+					"4adf0ba9931c26966ec004888761d01ea6efc38ea1f05c77d67b288af9801bd3", // your private key
+					"https://rpc.buildbear.io/marked-wasp-80dae2e6" // BuildBear RPC
+				),
+			network_id: 31337, // BuildBear’s default (sometimes *)
+			chain_id: 31337,
+			gas: 6000000,
+			gasPrice: 1000000000, // 1 gwei
+		},
 	},
+
 	compilers: {
 		solc: {
 			version: "0.8.0",
-		},
-	},
-	networks: {
-		buildbear: {
-			url: "https://rpc.buildbear.io/marked-wasp-80dae2e6",
-			accounts: [
-				"4adf0ba9931c26966ec004888761d01ea6efc38ea1f05c77d67b288af9801bd3",
-			],
-			chainId: 31337,
-			network_id: 31337,
 		},
 	},
 };
