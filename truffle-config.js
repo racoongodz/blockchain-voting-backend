@@ -18,7 +18,7 @@ module.exports = {
 				"4adf0ba9931c26966ec004888761d01ea6efc38ea1f05c77d67b288af9801bd3",
 			],
 			chainId: 31337,
-			network_id: "*",
+			network_id: 31337,
 		},
 	},
 };
