@@ -13,12 +13,12 @@ module.exports = {
 	},
 	networks: {
 		buildbear: {
-			url: "https://rpc.buildbear.io/nosy-cable-b9df6687",
+			url: "https://rpc.buildbear.io/fixed-ironman-c2639ee1",
 			accounts: [
 				"f0354b4cee7ac63523b9b02af9860f1a5dbc79f6e122b5fd29b600c16fbef7b5",
 			],
-			chainId: 27568,
-			network_id: 27568,
+			chainId: 31337,
+			network_id: 31337,
 		},
 	},
 };
