@@ -13,9 +13,9 @@ module.exports = {
 	},
 	networks: {
 		buildbear: {
-			url: "https://rpc.buildbear.io/exclusive-northstar-6cc4fea9",
+			url: "https://rpc.buildbear.io/marked-wasp-80dae2e6",
 			accounts: [
-				"f0354b4cee7ac63523b9b02af9860f1a5dbc79f6e122b5fd29b600c16fbef7b5",
+				"4adf0ba9931c26966ec004888761d01ea6efc38ea1f05c77d67b288af9801bd3",
 			],
 			chainId: 31337,
 			network_id: 31337,
