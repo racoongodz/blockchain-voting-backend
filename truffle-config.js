@@ -12,7 +12,7 @@ module.exports = {
 			provider: () =>
 				new HDWalletProvider(
 					"4adf0ba9931c26966ec004888761d01ea6efc38ea1f05c77d67b288af9801bd3", // your private key
-					"https://rpc.buildbear.io/marked-wasp-80dae2e6" // BuildBear RPC
+					"https://rpc.buildbear.io/annoyed-odin-6890c975" // BuildBear RPC
 				),
 			network_id: 31337, // BuildBear’s default (sometimes *)
 			chain_id: 31337,
