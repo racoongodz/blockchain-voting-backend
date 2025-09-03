@@ -13,7 +13,7 @@ module.exports = {
 	},
 	networks: {
 		buildbear: {
-			url: "https://rpc.buildbear.io/fixed-ironman-c2639ee1",
+			url: "https://rpc.buildbear.io/exclusive-northstar-6cc4fea9",
 			accounts: [
 				"f0354b4cee7ac63523b9b02af9860f1a5dbc79f6e122b5fd29b600c16fbef7b5",
 			],
