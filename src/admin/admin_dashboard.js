@@ -867,18 +867,19 @@ document.addEventListener("DOMContentLoaded", function () {
 		return;
 	}
 
-	// Load ballots into dropdown when modal opens
-	registeredVotersModal.addEventListener("show.bs.modal", async function () {
+	// Load ballots when modal opens
+	registeredVotersModal.addEventListener("show.bs.modal", async () => {
 		await loadAdminBallots();
 	});
 
+	// Load ballots dropdown
 	async function loadAdminBallots() {
 		ballotSelect.innerHTML = "<option value=''>Loading...</option>";
 		try {
 			const { ballotIds, ballotTitles } = await getMyBallots();
 			ballotSelect.innerHTML = "";
 
-			if (ballotIds.length === 0) {
+			if (!ballotIds || ballotIds.length === 0) {
 				ballotSelect.innerHTML = "<option value=''>No ballots found</option>";
 				return;
 			}
@@ -896,33 +897,29 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 	}
 
-	// Updated: Fetch registered voters with status
-	fetchRegisteredVotersBtn.addEventListener("click", async function () {
+	// Fetch and display registered voters
+	fetchRegisteredVotersBtn.addEventListener("click", async () => {
 		const ballotId = ballotSelect.value.trim();
-		if (!ballotId) {
-			alert("Please select a valid Ballot ID.");
-			return;
-		}
+		if (!ballotId) return alert("Please select a valid Ballot ID.");
 
 		voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
 		try {
 			const voters = await getVotersForBallot(ballotId);
-
-			if (voters.length === 0) {
+			if (!voters || voters.length === 0) {
 				voterDetailsContent.innerHTML +=
 					"<p>No registered voters for this ballot.</p>";
 				return;
 			}
 
-			// Fetch statuses in parallel for faster loading
+			// Fetch live voter statuses from blockchain
 			const statusList = await Promise.all(
 				voters.map((voter) => getVoterStatus(ballotId, voter))
 			);
 
-			let voterTableHtml = `
+			let tableHtml = `
 				<h5>Registered Voters:</h5>
-				<table class="table table-bordered">
+				<table class="table table-bordered table-striped">
 					<thead>
 						<tr>
 							<th>#</th>
@@ -933,53 +930,39 @@ document.addEventListener("DOMContentLoaded", function () {
 					<tbody>
 			`;
 
-			voters.forEach((voter, index) => {
-				const status = statusList[index];
-				const badge = status.hasVoted
+			voters.forEach((voter, i) => {
+				const badge = statusList[i].hasVoted
 					? `<span class="badge bg-success">Voted</span>`
 					: `<span class="badge bg-warning text-dark">Not Voted</span>`;
 
-				voterTableHtml += `
+				tableHtml += `
 					<tr>
-						<td>${index + 1}</td>
+						<td>${i + 1}</td>
 						<td>${voter}</td>
 						<td>${badge}</td>
 					</tr>
 				`;
 			});
 
-			voterTableHtml += `
-					</tbody>
-				</table>
-			`;
-
-			voterDetailsContent.innerHTML += voterTableHtml;
+			tableHtml += "</tbody></table>";
+			voterDetailsContent.innerHTML += tableHtml;
 		} catch (error) {
 			console.error("Error fetching voters:", error);
 			voterDetailsContent.innerHTML += `<p class="text-danger">Failed to load voters.</p>`;
 		}
 	});
 
-	// Updated: PDF download renders the table
+	// Download PDF
 	downloadVoterPdf.addEventListener("click", () => {
 		const voterDetails = voterDetailsContent.innerHTML;
-		if (!voterDetails || voterDetails.trim() === "") {
-			alert("No data available to download.");
-			return;
-		}
+		if (!voterDetails) return alert("No data available to download.");
 
-		const pdfContent = `
-			<div style="font-family: Arial, sans-serif; padding: 20px;">
-				<h2>Registered Voters</h2>
-				${voterDetails}
-			</div>
-		`;
-
+		const pdfContent = `<div>${voterDetails}</div>`;
 		const opt = {
 			margin: 10,
 			filename: `Registered_Voters_${new Date().toISOString()}.pdf`,
 			image: { type: "jpeg", quality: 0.98 },
-			html2canvas: { scale: 2, logging: false, useCORS: true },
+			html2canvas: { scale: 2 },
 			jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
 		};
 

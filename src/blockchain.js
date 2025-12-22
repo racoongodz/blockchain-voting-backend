@@ -722,13 +722,12 @@ export async function getVoterStatus(ballotId, voterAddress) {
 		const result = await contract.methods
 			.getVoterStatus(ballotId, voterAddress)
 			.call();
-
 		return {
 			isRegistered: result[0],
 			hasVoted: result[1],
 		};
-	} catch (error) {
-		console.error("Get voter status error:", error);
+	} catch (err) {
+		console.error(err);
 		return { isRegistered: false, hasVoted: false };
 	}
 }
