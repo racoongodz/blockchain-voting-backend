@@ -913,22 +913,20 @@ document.addEventListener("DOMContentLoaded", function () {
 				return;
 			}
 
-			// Fetch all voter statuses in parallel
+			// Fetch voter statuses in parallel
 			const statusPromises = voters.map(async (voterAddress) => {
 				try {
-					const result = await contract.methods
-						.authenticateVoter(ballotId, "dummyPassword")
-						.call({ from: voterAddress });
-					return { address: voterAddress, hasVoted: result[1] };
+					const result = await getVoterStatus(ballotId, voterAddress);
+					return { address: voterAddress, hasVoted: result.hasVoted };
 				} catch (err) {
-					console.error(`Error checking voter ${voterAddress}:`, err);
+					console.error(`Error fetching status for ${voterAddress}:`, err);
 					return { address: voterAddress, hasVoted: false };
 				}
 			});
 
 			const voterStatuses = await Promise.all(statusPromises);
 
-			// Build the table
+			// Build table
 			let voterListHtml =
 				"<h5>Registered Voters:</h5><table class='table table-bordered'><thead><tr><th>Address</th><th>Status</th></tr></thead><tbody>";
 
