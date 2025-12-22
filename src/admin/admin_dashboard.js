@@ -894,7 +894,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 	}
 
-	// Fetch registered voters with live voting status
+	// Fetch registered voters with accurate voting status
 	fetchRegisteredVotersBtn.addEventListener("click", async function () {
 		const ballotId = ballotSelect.value.trim();
 		if (!ballotId) {
@@ -906,18 +906,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
 		try {
 			const voters = await getVotersForBallot(ballotId);
-
 			if (!voters || voters.length === 0) {
 				voterDetailsContent.innerHTML +=
 					"<p>No registered voters for this ballot.</p>";
 				return;
 			}
 
-			// Fetch voter statuses in parallel
+			// Fetch each voter's status
 			const statusPromises = voters.map(async (voterAddress) => {
 				try {
-					const result = await getVoterStatus(ballotId, voterAddress);
-					return { address: voterAddress, hasVoted: result.hasVoted };
+					const status = await getVoterStatus(ballotId, voterAddress);
+					return { address: voterAddress, hasVoted: status.hasVoted };
 				} catch (err) {
 					console.error(`Error fetching status for ${voterAddress}:`, err);
 					return { address: voterAddress, hasVoted: false };
@@ -927,16 +926,22 @@ document.addEventListener("DOMContentLoaded", function () {
 			const voterStatuses = await Promise.all(statusPromises);
 
 			// Build table
-			let voterListHtml =
-				"<h5>Registered Voters:</h5><table class='table table-bordered'><thead><tr><th>Address</th><th>Status</th></tr></thead><tbody>";
+			let tableHtml = `
+				<h5>Registered Voters:</h5>
+				<table class="table table-bordered">
+					<thead>
+						<tr><th>Address</th><th>Status</th></tr>
+					</thead>
+					<tbody>
+			`;
 
 			voterStatuses.forEach((voter) => {
 				const label = voter.hasVoted ? "Voted" : "Not Voted";
-				voterListHtml += `<tr><td>${voter.address}</td><td>${label}</td></tr>`;
+				tableHtml += `<tr><td>${voter.address}</td><td>${label}</td></tr>`;
 			});
 
-			voterListHtml += "</tbody></table>";
-			voterDetailsContent.innerHTML += voterListHtml;
+			tableHtml += "</tbody></table>";
+			voterDetailsContent.innerHTML += tableHtml;
 		} catch (error) {
 			console.error("Error fetching voter data:", error);
 			voterDetailsContent.innerHTML +=
