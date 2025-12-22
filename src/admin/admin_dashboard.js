@@ -879,10 +879,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		ballotSelect.innerHTML = "<option value=''>Loading...</option>";
 
 		try {
-			const result = await getMyBallots(); // returns object {0: [...], 1: [...]}
-			const ballotIds = result[0];
-			const ballotTitles = result[1];
-
+			const { ballotIds, ballotTitles } = await getMyBallots(); // Use your export function
 			ballotSelect.innerHTML = "";
 
 			if (!ballotIds || ballotIds.length === 0) {
