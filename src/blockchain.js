@@ -346,54 +346,6 @@ const contractABI = [
 				name: "_ballotId",
 				type: "string",
 			},
-			{
-				internalType: "address",
-				name: "_voter",
-				type: "address",
-			},
-		],
-		name: "getVoterStatus",
-		outputs: [
-			{
-				internalType: "bool",
-				name: "isRegistered",
-				type: "bool",
-			},
-			{
-				internalType: "bool",
-				name: "hasVoted",
-				type: "bool",
-			},
-		],
-		stateMutability: "view",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "string",
-				name: "_ballotId",
-				type: "string",
-			},
-		],
-		name: "getVotersForBallot",
-		outputs: [
-			{
-				internalType: "address[]",
-				name: "",
-				type: "address[]",
-			},
-		],
-		stateMutability: "view",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "string",
-				name: "_ballotId",
-				type: "string",
-			},
 		],
 		name: "getVotersWithStatus",
 		outputs: [
@@ -493,29 +445,6 @@ const contractABI = [
 	{
 		inputs: [
 			{
-				internalType: "address",
-				name: "_voter",
-				type: "address",
-			},
-			{
-				internalType: "string",
-				name: "_ballotId",
-				type: "string",
-			},
-			{
-				internalType: "bytes32",
-				name: "_hashedPassword",
-				type: "bytes32",
-			},
-		],
-		name: "registerVoter",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
 				internalType: "string",
 				name: "",
 				type: "string",
@@ -578,7 +507,7 @@ const contractABI = [
 ];
 
 // Smart contract address (Update after deployment)
-const contractAddress = "0x8544AcD8D548Ab4446eFa1363390d593526E5F41";
+const contractAddress = "0xBeB15cEc0Cd288756468400C5Bb12D2CE6763A9d";
 
 // Initialize contract
 const contract = new web3.eth.Contract(contractABI, contractAddress);

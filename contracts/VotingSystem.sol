@@ -127,34 +127,6 @@ contract VotingSystem {
     }
 
     // ---------------- Voter registration ----------------
-    function registerVoter(address _voter, string memory _ballotId, bytes32 _hashedPassword) public {
-        require(isAdminRegistered[msg.sender], "Only admins can register voters");
-        require(bytes(_ballotId).length == 8, "Invalid Ballot ID");
-        require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
-        require(!registeredVoters[_ballotId][_voter].isRegistered, "Voter already registered for this ballot");
-
-        registeredVoters[_ballotId][_voter] = Voter({
-            hashedPassword: _hashedPassword,
-            ballotId: _ballotId,
-            isRegistered: true,
-            hasVoted: false
-        });
-
-        ballotVoters[_ballotId].push(_voter);
-        emit VoterRegistered(_voter, _ballotId);
-    }
-    function getVoterStatus(string memory _ballotId, address _voter)
-    public
-    view
-    returns (bool isRegistered, bool hasVoted)
-{
-    require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
-
-    Voter storage voter = registeredVoters[_ballotId][_voter];
-    return (voter.isRegistered, voter.hasVoted);
-}
-
-
     function registerMultipleVoters(
         address[] memory _voterAddresses,
         string memory _ballotId,
@@ -181,9 +153,19 @@ contract VotingSystem {
         }
     }
 
-    function getVotersForBallot(string memory _ballotId) public view returns (address[] memory) {
-        require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
-        return ballotVoters[_ballotId];
+    function getVotersWithStatus(string memory _ballotId)
+        public
+        view
+        returns (address[] memory, bool[] memory)
+    {
+        address[] memory voters = ballotVoters[_ballotId];
+        bool[] memory votedStatus = new bool[](voters.length);
+
+        for (uint i = 0; i < voters.length; i++) {
+            votedStatus[i] = registeredVoters[_ballotId][voters[i]].hasVoted;
+        }
+
+        return (voters, votedStatus);
     }
 
     // ---------------- Voting ----------------
@@ -302,19 +284,4 @@ contract VotingSystem {
         ballots[_ballotId].isClosed = true;
         emit VotingEnded(_ballotId, msg.sender);
     }
-    function getVotersWithStatus(string memory _ballotId)
-    public
-    view
-    returns (address[] memory, bool[] memory)
-{
-    address[] memory voters = ballotVoters[_ballotId];
-    bool[] memory votedStatus = new bool[](voters.length);
-
-    for (uint i = 0; i < voters.length; i++) {
-        votedStatus[i] = registeredVoters[_ballotId][voters[i]].hasVoted;
-    }
-
-    return (voters, votedStatus);
-}
-
 }
