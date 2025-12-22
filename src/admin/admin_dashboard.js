@@ -855,6 +855,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	const voterDetailsContent = document.getElementById("voterDetailsContent");
 	const downloadVoterPdf = document.getElementById("downloadVoterPdf");
 
+	// Safety check for all required elements
 	if (
 		!registeredVotersModal ||
 		!fetchRegisteredVotersBtn ||
@@ -876,11 +877,15 @@ document.addEventListener("DOMContentLoaded", function () {
 	// Load admin ballots into dropdown
 	async function loadAdminBallots() {
 		ballotSelect.innerHTML = "<option value=''>Loading...</option>";
+
 		try {
-			const { 0: ballotIds, 1: ballotTitles } = await getMyBallots(); // destructure returned tuple
+			const result = await getMyBallots(); // returns object {0: [...], 1: [...]}
+			const ballotIds = result[0];
+			const ballotTitles = result[1];
+
 			ballotSelect.innerHTML = "";
 
-			if (ballotIds.length === 0) {
+			if (!ballotIds || ballotIds.length === 0) {
 				ballotSelect.innerHTML = "<option value=''>No ballots found</option>";
 				return;
 			}
@@ -907,14 +912,14 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 
 		try {
-			// Fetch voters and their vote status
-			const [voterAddresses, votedStatuses] = await getVotersWithStatus(
-				ballotId
-			);
+			// Fetch voters and their vote status from the contract
+			const result = await getVotersWithStatus(ballotId);
+			const voterAddresses = result.map((v) => v.address);
+			const votedStatuses = result.map((v) => v.hasVoted);
 
 			voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
-			if (voterAddresses.length === 0) {
+			if (!voterAddresses || voterAddresses.length === 0) {
 				voterDetailsContent.innerHTML +=
 					"<p>No registered voters for this ballot.</p>";
 				return;
