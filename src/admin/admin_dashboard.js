@@ -878,7 +878,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		ballotSelect.innerHTML = "<option value=''>Loading...</option>";
 
 		try {
-			const { ballotIds, ballotTitles } = await getMyBallots(); // Use your export function
+			const { ballotIds, ballotTitles } = await getMyBallots();
 			ballotSelect.innerHTML = "";
 
 			if (!ballotIds || ballotIds.length === 0) {
@@ -912,25 +912,24 @@ document.addEventListener("DOMContentLoaded", function () {
 				ballotId
 			);
 
-			voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
-
 			if (!voterAddresses || voterAddresses.length === 0) {
-				voterDetailsContent.innerHTML +=
-					"<p>No registered voters for this ballot.</p>";
+				voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p><p>No registered voters for this ballot.</p>`;
 				return;
 			}
 
-			// Create table
+			// Dynamic scrollable table
 			let tableHtml = `
-				<table class="table table-striped table-bordered">
-					<thead>
-						<tr>
-							<th>#</th>
-							<th>Voter Address</th>
-							<th>Status</th>
-						</tr>
-					</thead>
-					<tbody>
+				<p><strong>Ballot ID:</strong> ${ballotId}</p>
+				<div class="table-responsive" style="max-height:400px; overflow-y:auto;">
+					<table class="table table-striped table-bordered mb-0">
+						<thead class="table-dark">
+							<tr>
+								<th>#</th>
+								<th>Voter Address</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody>
 			`;
 
 			for (let i = 0; i < voterAddresses.length; i++) {
@@ -948,14 +947,15 @@ document.addEventListener("DOMContentLoaded", function () {
 			}
 
 			tableHtml += `
-					</tbody>
-				</table>
+						</tbody>
+					</table>
+				</div>
 			`;
 
-			voterDetailsContent.innerHTML += tableHtml;
+			voterDetailsContent.innerHTML = tableHtml;
 		} catch (error) {
 			console.error("Error fetching registered voters:", error);
-			voterDetailsContent.innerHTML +=
+			voterDetailsContent.innerHTML =
 				"<p class='text-danger'>Error fetching registered voters.</p>";
 		}
 	});
