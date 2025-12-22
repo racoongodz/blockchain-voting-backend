@@ -906,21 +906,22 @@ document.addEventListener("DOMContentLoaded", function () {
 			return;
 		}
 
-		const { voters, votedStatus } = await getVotersWithStatus(ballotId);
+		// Fetch voters and their vote status
+		const votersWithStatus = await getVotersWithStatus(ballotId);
 
 		voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
-		if (voters.length === 0) {
+		if (votersWithStatus.length === 0) {
 			voterDetailsContent.innerHTML +=
 				"<p>No registered voters for this ballot.</p>";
 			return;
 		}
 
 		let voterListHtml = "<h5>Registered Voters:</h5><ul>";
-		for (let i = 0; i < voters.length; i++) {
-			const label = votedStatus[i] ? "Voted" : "Not Voted";
-			voterListHtml += `<li>${voters[i]} - ${label}</li>`;
-		}
+		votersWithStatus.forEach((voter) => {
+			const label = voter.hasVoted ? "Voted" : "Not Voted";
+			voterListHtml += `<li>${voter.address} - ${label}</li>`;
+		});
 		voterListHtml += "</ul>";
 
 		voterDetailsContent.innerHTML += voterListHtml;

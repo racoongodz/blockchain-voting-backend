@@ -758,14 +758,17 @@ export async function getVoterStatus(ballotId, voterAddress) {
 export async function getVotersWithStatus(ballotId) {
 	try {
 		const result = await contract.methods.getVotersWithStatus(ballotId).call();
-		// result[0] = addresses, result[1] = hasVoted array
-		return {
-			voters: result[0],
-			votedStatus: result[1],
-		};
+
+		const voters = result[0]; // array of voter addresses
+		const votedStatus = result[1]; // array of booleans (true = voted, false = not voted)
+
+		return voters.map((voter, index) => ({
+			address: voter,
+			hasVoted: votedStatus[index],
+		}));
 	} catch (error) {
 		console.error("Error fetching voters with status:", error);
-		return { voters: [], votedStatus: [] };
+		return [];
 	}
 }
 
