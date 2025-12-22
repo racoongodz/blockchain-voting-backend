@@ -390,6 +390,30 @@ const contractABI = [
 	{
 		inputs: [
 			{
+				internalType: "string",
+				name: "_ballotId",
+				type: "string",
+			},
+		],
+		name: "getVotersWithStatus",
+		outputs: [
+			{
+				internalType: "address[]",
+				name: "",
+				type: "address[]",
+			},
+			{
+				internalType: "bool[]",
+				name: "",
+				type: "bool[]",
+			},
+		],
+		stateMutability: "view",
+		type: "function",
+	},
+	{
+		inputs: [
+			{
 				internalType: "address",
 				name: "",
 				type: "address",
@@ -554,7 +578,7 @@ const contractABI = [
 ];
 
 // Smart contract address (Update after deployment)
-const contractAddress = "0xA39fD1C9b828f0F4617196d9687841CFC64FAc98";
+const contractAddress = "0xDf839951466F2F930AB8d4b8832A6C2C9e38dfB4";
 
 // Initialize contract
 const contract = new web3.eth.Contract(contractABI, contractAddress);
@@ -729,6 +753,18 @@ export async function getVoterStatus(ballotId, voterAddress) {
 	} catch (err) {
 		console.error(err);
 		return { isRegistered: false, hasVoted: false };
+	}
+}
+export async function getVotersWithStatus(ballotId) {
+	try {
+		const result = await contract.methods.getVotersWithStatus(ballotId).call();
+		return {
+			voters: result[0],
+			votedStatus: result[1],
+		};
+	} catch (error) {
+		console.error("Error fetching voters with status:", error);
+		return { voters: [], votedStatus: [] };
 	}
 }
 

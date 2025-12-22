@@ -902,51 +902,25 @@ document.addEventListener("DOMContentLoaded", function () {
 			return;
 		}
 
+		const { voters, votedStatus } = await getVotersWithStatus(ballotId);
+
+		// Display voter details
 		voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
-		try {
-			const voters = await getVotersForBallot(ballotId);
-			if (!voters || voters.length === 0) {
-				voterDetailsContent.innerHTML +=
-					"<p>No registered voters for this ballot.</p>";
-				return;
-			}
-
-			// Fetch each voter's status
-			const statusPromises = voters.map(async (voterAddress) => {
-				try {
-					const status = await getVoterStatus(ballotId, voterAddress);
-					return { address: voterAddress, hasVoted: status.hasVoted };
-				} catch (err) {
-					console.error(`Error fetching status for ${voterAddress}:`, err);
-					return { address: voterAddress, hasVoted: false };
-				}
-			});
-
-			const voterStatuses = await Promise.all(statusPromises);
-
-			// Build table
-			let tableHtml = `
-				<h5>Registered Voters:</h5>
-				<table class="table table-bordered">
-					<thead>
-						<tr><th>Address</th><th>Status</th></tr>
-					</thead>
-					<tbody>
-			`;
-
-			voterStatuses.forEach((voter) => {
-				const label = voter.hasVoted ? "Voted" : "Not Voted";
-				tableHtml += `<tr><td>${voter.address}</td><td>${label}</td></tr>`;
-			});
-
-			tableHtml += "</tbody></table>";
-			voterDetailsContent.innerHTML += tableHtml;
-		} catch (error) {
-			console.error("Error fetching voter data:", error);
+		if (voters.length === 0) {
 			voterDetailsContent.innerHTML +=
-				"<p class='text-danger'>Error fetching voter data.</p>";
+				"<p>No registered voters for this ballot.</p>";
+			return;
 		}
+
+		let voterListHtml = "<h5>Registered Voters:</h5><ul>";
+		for (let i = 0; i < voters.length; i++) {
+			const label = votedStatus[i] ? "Voted" : "Not Voted";
+			voterListHtml += `<li>${voters[i]} - ${label}</li>`;
+		}
+		voterListHtml += "</ul>";
+
+		voterDetailsContent.innerHTML += voterListHtml;
 	});
 
 	// Download PDF
