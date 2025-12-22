@@ -907,46 +907,51 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 
 		try {
-			const [voterAddresses, votedStatuses] = await getVotersWithStatus(
-				ballotId
-			);
+			// Fetch voters and their vote status
+			const votersWithStatus = await getVotersWithStatus(ballotId);
 
 			voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
-			if (voterAddresses.length === 0) {
+			if (votersWithStatus.length === 0) {
 				voterDetailsContent.innerHTML +=
 					"<p>No registered voters for this ballot.</p>";
 				return;
 			}
 
-			// Create dynamic table
+			// Build dynamic table
 			let tableHtml = `
-				<table class="table table-striped table-bordered">
-					<thead class="table-dark">
-						<tr>
-							<th>#</th>
-							<th>Voter Address</th>
-							<th>Status</th>
-						</tr>
-					</thead>
-					<tbody>
+				<div class="table-responsive">
+					<table class="table table-striped table-bordered">
+						<thead class="table-dark">
+							<tr>
+								<th>#</th>
+								<th>Voter Address</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody>
 			`;
 
-			for (let i = 0; i < voterAddresses.length; i++) {
-				const statusLabel = votedStatuses[i] ? "Voted" : "Not Voted";
-				const badgeClass = votedStatuses[i]
+			votersWithStatus.forEach((voter, index) => {
+				const label = voter.hasVoted ? "Voted" : "Not Voted";
+				const badgeClass = voter.hasVoted
 					? "bg-success"
 					: "bg-warning text-dark";
 				tableHtml += `
 					<tr>
-						<td>${i + 1}</td>
-						<td>${voterAddresses[i]}</td>
-						<td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+						<td>${index + 1}</td>
+						<td>${voter.address}</td>
+						<td><span class="badge ${badgeClass}">${label}</span></td>
 					</tr>
 				`;
-			}
+			});
 
-			tableHtml += "</tbody></table>";
+			tableHtml += `
+						</tbody>
+					</table>
+				</div>
+			`;
+
 			voterDetailsContent.innerHTML += tableHtml;
 		} catch (error) {
 			console.error("Error fetching registered voters:", error);
