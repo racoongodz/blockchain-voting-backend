@@ -842,7 +842,7 @@ document
 		}
 	});
 
-// Voter reports
+// Registered Voters Report
 document.addEventListener("DOMContentLoaded", function () {
 	const registeredVotersModal = document.getElementById(
 		"registeredVotersModal"
@@ -854,6 +854,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	const voterDetailsContent = document.getElementById("voterDetailsContent");
 	const downloadVoterPdf = document.getElementById("downloadVoterPdf");
 
+	// Ensure all elements exist
 	if (
 		!registeredVotersModal ||
 		!fetchRegisteredVotersBtn ||
@@ -861,18 +862,15 @@ document.addEventListener("DOMContentLoaded", function () {
 		!voterDetailsContent ||
 		!downloadVoterPdf
 	) {
-		console.error(
-			"❌ Some elements are missing in the HTML. Please check your IDs."
-		);
+		console.error("❌ Some elements are missing. Check your HTML IDs.");
 		return;
 	}
 
-	// Load ballots when modal opens
-	registeredVotersModal.addEventListener("show.bs.modal", async () => {
+	// Load ballots into the dropdown when modal opens
+	registeredVotersModal.addEventListener("show.bs.modal", async function () {
 		await loadAdminBallots();
 	});
 
-	// Load ballots dropdown
 	async function loadAdminBallots() {
 		ballotSelect.innerHTML = "<option value=''>Loading...</option>";
 		try {
@@ -897,65 +895,53 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 	}
 
-	// Fetch and display registered voters
-	fetchRegisteredVotersBtn.addEventListener("click", async () => {
+	// Fetch registered voters and their voting status
+	fetchRegisteredVotersBtn.addEventListener("click", async function () {
 		const ballotId = ballotSelect.value.trim();
-		if (!ballotId) return alert("Please select a valid Ballot ID.");
+		if (!ballotId) {
+			alert("Please select a valid Ballot ID.");
+			return;
+		}
 
 		voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
 		try {
-			const voters = await getVotersForBallot(ballotId);
+			const voters = await getVotersForBallot(ballotId); // Get addresses from blockchain
+
 			if (!voters || voters.length === 0) {
 				voterDetailsContent.innerHTML +=
 					"<p>No registered voters for this ballot.</p>";
 				return;
 			}
 
-			// Fetch live voter statuses from blockchain
-			const statusList = await Promise.all(
-				voters.map((voter) => getVoterStatus(ballotId, voter))
-			);
+			let voterListHtml =
+				"<h5>Registered Voters:</h5><table class='table table-bordered'><thead><tr><th>Address</th><th>Status</th></tr></thead><tbody>";
 
-			let tableHtml = `
-				<h5>Registered Voters:</h5>
-				<table class="table table-bordered table-striped">
-					<thead>
-						<tr>
-							<th>#</th>
-							<th>MetaMask Address</th>
-							<th>Status</th>
-						</tr>
-					</thead>
-					<tbody>
-			`;
+			// Fetch status for each voter
+			for (let i = 0; i < voters.length; i++) {
+				const voterAddress = voters[i];
+				const status = await getVoterStatus(ballotId, voterAddress); // Call smart contract
+				const label = status.hasVoted ? "Voted" : "Not Voted";
 
-			voters.forEach((voter, i) => {
-				const badge = statusList[i].hasVoted
-					? `<span class="badge bg-success">Voted</span>`
-					: `<span class="badge bg-warning text-dark">Not Voted</span>`;
+				voterListHtml += `<tr><td>${voterAddress}</td><td>${label}</td></tr>`;
+			}
 
-				tableHtml += `
-					<tr>
-						<td>${i + 1}</td>
-						<td>${voter}</td>
-						<td>${badge}</td>
-					</tr>
-				`;
-			});
-
-			tableHtml += "</tbody></table>";
-			voterDetailsContent.innerHTML += tableHtml;
+			voterListHtml += "</tbody></table>";
+			voterDetailsContent.innerHTML += voterListHtml;
 		} catch (error) {
-			console.error("Error fetching voters:", error);
-			voterDetailsContent.innerHTML += `<p class="text-danger">Failed to load voters.</p>`;
+			console.error("Error fetching voter status:", error);
+			voterDetailsContent.innerHTML +=
+				"<p class='text-danger'>Error fetching voter data.</p>";
 		}
 	});
 
-	// Download PDF
+	// Download voter report as PDF
 	downloadVoterPdf.addEventListener("click", () => {
 		const voterDetails = voterDetailsContent.innerHTML;
-		if (!voterDetails) return alert("No data available to download.");
+		if (!voterDetails) {
+			alert("No data available to download.");
+			return;
+		}
 
 		const pdfContent = `<div>${voterDetails}</div>`;
 		const opt = {
