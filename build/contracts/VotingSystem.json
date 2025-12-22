@@ -48527,8 +48527,8 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0xDf839951466F2F930AB8d4b8832A6C2C9e38dfB4",
-      "transactionHash": "0x669215a4d4e32d80dc9ea26c2498eea4647adb0f32f9bd69d23e8b7028f1d678"
+      "address": "0x8544AcD8D548Ab4446eFa1363390d593526E5F41",
+      "transactionHash": "0xe789595cb03beec922e3effa2f2c6b98ba5d8c93861d40069a4e0fcbc1aac6f8"
     },
     "27568": {
       "events": {},
@@ -48544,7 +48544,7 @@
     }
   },
   "schemaVersion": "3.4.14",
-  "updatedAt": "2025-12-22T16:04:53.642Z",
+  "updatedAt": "2025-12-22T16:26:21.829Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",
