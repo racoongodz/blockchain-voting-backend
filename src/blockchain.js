@@ -758,6 +758,7 @@ export async function getVoterStatus(ballotId, voterAddress) {
 export async function getVotersWithStatus(ballotId) {
 	try {
 		const result = await contract.methods.getVotersWithStatus(ballotId).call();
+		// result[0] = addresses, result[1] = hasVoted array
 		return {
 			voters: result[0],
 			votedStatus: result[1],

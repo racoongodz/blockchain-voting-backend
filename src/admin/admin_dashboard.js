@@ -8,6 +8,7 @@ import {
 	endVoting,
 	isBallotClosed,
 	getVoterStatus,
+	getVotersWithStatus,
 } from "../blockchain.js";
 window.fetchApprovedVoters = fetchApprovedVoters;
 
@@ -861,22 +862,25 @@ document.addEventListener("DOMContentLoaded", function () {
 		!voterDetailsContent ||
 		!downloadVoterPdf
 	) {
-		console.error("❌ Some elements are missing. Check your HTML IDs.");
+		console.error(
+			"❌ Some elements are missing in the HTML. Please check your IDs."
+		);
 		return;
 	}
 
-	// Load ballots into dropdown
+	// Load ballots when modal is shown
 	registeredVotersModal.addEventListener("show.bs.modal", async function () {
 		await loadAdminBallots();
 	});
 
+	// Load admin ballots into dropdown
 	async function loadAdminBallots() {
 		ballotSelect.innerHTML = "<option value=''>Loading...</option>";
 		try {
 			const { ballotIds, ballotTitles } = await getMyBallots();
 			ballotSelect.innerHTML = "";
 
-			if (!ballotIds || ballotIds.length === 0) {
+			if (ballotIds.length === 0) {
 				ballotSelect.innerHTML = "<option value=''>No ballots found</option>";
 				return;
 			}
@@ -894,7 +898,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 	}
 
-	// Fetch registered voters with accurate voting status
+	// Fetch registered voters with status
 	fetchRegisteredVotersBtn.addEventListener("click", async function () {
 		const ballotId = ballotSelect.value.trim();
 		if (!ballotId) {
@@ -904,7 +908,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 		const { voters, votedStatus } = await getVotersWithStatus(ballotId);
 
-		// Display voter details
 		voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
 		if (voters.length === 0) {
@@ -932,6 +935,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 
 		const pdfContent = `<div>${voterDetails}</div>`;
+
 		const opt = {
 			margin: 10,
 			filename: `Registered_Voters_${new Date().toISOString()}.pdf`,
