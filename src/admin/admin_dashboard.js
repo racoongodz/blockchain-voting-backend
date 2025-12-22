@@ -877,7 +877,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	async function loadAdminBallots() {
 		ballotSelect.innerHTML = "<option value=''>Loading...</option>";
 		try {
-			const { ballotIds, ballotTitles } = await getMyBallots();
+			const { 0: ballotIds, 1: ballotTitles } = await getMyBallots(); // destructure returned tuple
 			ballotSelect.innerHTML = "";
 
 			if (ballotIds.length === 0) {
@@ -906,25 +906,33 @@ document.addEventListener("DOMContentLoaded", function () {
 			return;
 		}
 
-		// Fetch voters and their vote status
-		const votersWithStatus = await getVotersWithStatus(ballotId);
+		try {
+			// Fetch voters and their vote status
+			const [voterAddresses, votedStatuses] = await getVotersWithStatus(
+				ballotId
+			);
 
-		voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
+			voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
-		if (votersWithStatus.length === 0) {
+			if (voterAddresses.length === 0) {
+				voterDetailsContent.innerHTML +=
+					"<p>No registered voters for this ballot.</p>";
+				return;
+			}
+
+			let voterListHtml = "<h5>Registered Voters:</h5><ul>";
+			for (let i = 0; i < voterAddresses.length; i++) {
+				const label = votedStatuses[i] ? "Voted" : "Not Voted";
+				voterListHtml += `<li>${voterAddresses[i]} - ${label}</li>`;
+			}
+			voterListHtml += "</ul>";
+
+			voterDetailsContent.innerHTML += voterListHtml;
+		} catch (error) {
+			console.error("Error fetching registered voters:", error);
 			voterDetailsContent.innerHTML +=
-				"<p>No registered voters for this ballot.</p>";
-			return;
+				"<p class='text-danger'>Error fetching registered voters.</p>";
 		}
-
-		let voterListHtml = "<h5>Registered Voters:</h5><ul>";
-		votersWithStatus.forEach((voter) => {
-			const label = voter.hasVoted ? "Voted" : "Not Voted";
-			voterListHtml += `<li>${voter.address} - ${label}</li>`;
-		});
-		voterListHtml += "</ul>";
-
-		voterDetailsContent.innerHTML += voterListHtml;
 	});
 
 	// Download PDF
