@@ -876,12 +876,11 @@ document.addEventListener("DOMContentLoaded", function () {
 	// Load admin ballots into dropdown
 	async function loadAdminBallots() {
 		ballotSelect.innerHTML = "<option value=''>Loading...</option>";
-
 		try {
 			const { ballotIds, ballotTitles } = await getMyBallots();
 			ballotSelect.innerHTML = "";
 
-			if (!ballotIds || ballotIds.length === 0) {
+			if (ballotIds.length === 0) {
 				ballotSelect.innerHTML = "<option value=''>No ballots found</option>";
 				return;
 			}
@@ -908,54 +907,50 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 
 		try {
-			const { 0: voterAddresses, 1: votedStatuses } = await getVotersWithStatus(
+			const [voterAddresses, votedStatuses] = await getVotersWithStatus(
 				ballotId
 			);
 
-			if (!voterAddresses || voterAddresses.length === 0) {
-				voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p><p>No registered voters for this ballot.</p>`;
+			voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
+
+			if (voterAddresses.length === 0) {
+				voterDetailsContent.innerHTML +=
+					"<p>No registered voters for this ballot.</p>";
 				return;
 			}
 
-			// Dynamic scrollable table
+			// Create dynamic table
 			let tableHtml = `
-				<p><strong>Ballot ID:</strong> ${ballotId}</p>
-				<div class="table-responsive" style="max-height:400px; overflow-y:auto;">
-					<table class="table table-striped table-bordered mb-0">
-						<thead class="table-dark">
-							<tr>
-								<th>#</th>
-								<th>Voter Address</th>
-								<th>Status</th>
-							</tr>
-						</thead>
-						<tbody>
+				<table class="table table-striped table-bordered">
+					<thead class="table-dark">
+						<tr>
+							<th>#</th>
+							<th>Voter Address</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					<tbody>
 			`;
 
 			for (let i = 0; i < voterAddresses.length; i++) {
 				const statusLabel = votedStatuses[i] ? "Voted" : "Not Voted";
 				const badgeClass = votedStatuses[i]
-					? "badge bg-success"
-					: "badge bg-warning text-dark";
+					? "bg-success"
+					: "bg-warning text-dark";
 				tableHtml += `
 					<tr>
 						<td>${i + 1}</td>
 						<td>${voterAddresses[i]}</td>
-						<td><span class="${badgeClass}">${statusLabel}</span></td>
+						<td><span class="badge ${badgeClass}">${statusLabel}</span></td>
 					</tr>
 				`;
 			}
 
-			tableHtml += `
-						</tbody>
-					</table>
-				</div>
-			`;
-
-			voterDetailsContent.innerHTML = tableHtml;
+			tableHtml += "</tbody></table>";
+			voterDetailsContent.innerHTML += tableHtml;
 		} catch (error) {
 			console.error("Error fetching registered voters:", error);
-			voterDetailsContent.innerHTML =
+			voterDetailsContent.innerHTML +=
 				"<p class='text-danger'>Error fetching registered voters.</p>";
 		}
 	});
