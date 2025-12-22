@@ -143,6 +143,17 @@ contract VotingSystem {
         ballotVoters[_ballotId].push(_voter);
         emit VoterRegistered(_voter, _ballotId);
     }
+    function getVoterStatus(string memory _ballotId, address _voter)
+    public
+    view
+    returns (bool isRegistered, bool hasVoted)
+{
+    require(bytes(ballots[_ballotId].id).length > 0, "Ballot ID does not exist");
+
+    Voter storage voter = registeredVoters[_ballotId][_voter];
+    return (voter.isRegistered, voter.hasVoted);
+}
+
 
     function registerMultipleVoters(
         address[] memory _voterAddresses,
