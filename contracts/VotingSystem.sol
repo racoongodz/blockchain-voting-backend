@@ -302,4 +302,19 @@ contract VotingSystem {
         ballots[_ballotId].isClosed = true;
         emit VotingEnded(_ballotId, msg.sender);
     }
+    function getVotersWithStatus(string memory _ballotId)
+    public
+    view
+    returns (address[] memory, bool[] memory)
+{
+    address[] memory voters = ballotVoters[_ballotId];
+    bool[] memory votedStatus = new bool[](voters.length);
+
+    for (uint i = 0; i < voters.length; i++) {
+        votedStatus[i] = registeredVoters[_ballotId][voters[i]].hasVoted;
+    }
+
+    return (voters, votedStatus);
+}
+
 }
