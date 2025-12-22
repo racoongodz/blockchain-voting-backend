@@ -894,7 +894,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 	}
 
-	// Fetch registered voters with correct voting status
+	// Fetch registered voters with live voting status
 	fetchRegisteredVotersBtn.addEventListener("click", async function () {
 		const ballotId = ballotSelect.value.trim();
 		if (!ballotId) {
@@ -905,7 +905,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
 		try {
-			const voters = await getVotersForBallot(ballotId); // Addresses from blockchain
+			const voters = await getVotersForBallot(ballotId);
 
 			if (!voters || voters.length === 0) {
 				voterDetailsContent.innerHTML +=
@@ -913,39 +913,40 @@ document.addEventListener("DOMContentLoaded", function () {
 				return;
 			}
 
+			// Fetch all voter statuses in parallel
+			const statusPromises = voters.map(async (voterAddress) => {
+				try {
+					const result = await contract.methods
+						.authenticateVoter(ballotId, "dummyPassword")
+						.call({ from: voterAddress });
+					return { address: voterAddress, hasVoted: result[1] };
+				} catch (err) {
+					console.error(`Error checking voter ${voterAddress}:`, err);
+					return { address: voterAddress, hasVoted: false };
+				}
+			});
+
+			const voterStatuses = await Promise.all(statusPromises);
+
+			// Build the table
 			let voterListHtml =
 				"<h5>Registered Voters:</h5><table class='table table-bordered'><thead><tr><th>Address</th><th>Status</th></tr></thead><tbody>";
 
-			// Loop through voters and fetch status from blockchain
-			for (let i = 0; i < voters.length; i++) {
-				let voterAddress = voters[i];
-				// Normalize address to checksum
-				voterAddress = window.ethereum.utils
-					? window.ethereum.utils.toChecksumAddress(voterAddress)
-					: voterAddress;
-
-				let status;
-				try {
-					status = await getVoterStatus(ballotId, voterAddress);
-				} catch (err) {
-					console.error(`Error fetching status for ${voterAddress}:`, err);
-					status = { hasVoted: false };
-				}
-
-				const label = status.hasVoted ? "Voted" : "Not Voted";
-				voterListHtml += `<tr><td>${voterAddress}</td><td>${label}</td></tr>`;
-			}
+			voterStatuses.forEach((voter) => {
+				const label = voter.hasVoted ? "Voted" : "Not Voted";
+				voterListHtml += `<tr><td>${voter.address}</td><td>${label}</td></tr>`;
+			});
 
 			voterListHtml += "</tbody></table>";
 			voterDetailsContent.innerHTML += voterListHtml;
 		} catch (error) {
-			console.error("Error fetching voter status:", error);
+			console.error("Error fetching voter data:", error);
 			voterDetailsContent.innerHTML +=
 				"<p class='text-danger'>Error fetching voter data.</p>";
 		}
 	});
 
-	// Download voter report as PDF
+	// Download PDF
 	downloadVoterPdf.addEventListener("click", () => {
 		const voterDetails = voterDetailsContent.innerHTML;
 		if (!voterDetails) {
