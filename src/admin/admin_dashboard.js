@@ -854,7 +854,6 @@ document.addEventListener("DOMContentLoaded", function () {
 	const voterDetailsContent = document.getElementById("voterDetailsContent");
 	const downloadVoterPdf = document.getElementById("downloadVoterPdf");
 
-	// Ensure all elements exist
 	if (
 		!registeredVotersModal ||
 		!fetchRegisteredVotersBtn ||
@@ -866,7 +865,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		return;
 	}
 
-	// Load ballots into the dropdown when modal opens
+	// Load ballots into dropdown
 	registeredVotersModal.addEventListener("show.bs.modal", async function () {
 		await loadAdminBallots();
 	});
@@ -895,7 +894,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 	}
 
-	// Fetch registered voters and their voting status
+	// Fetch registered voters with correct voting status
 	fetchRegisteredVotersBtn.addEventListener("click", async function () {
 		const ballotId = ballotSelect.value.trim();
 		if (!ballotId) {
@@ -906,7 +905,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
 		try {
-			const voters = await getVotersForBallot(ballotId); // Get addresses from blockchain
+			const voters = await getVotersForBallot(ballotId); // Addresses from blockchain
 
 			if (!voters || voters.length === 0) {
 				voterDetailsContent.innerHTML +=
@@ -917,12 +916,23 @@ document.addEventListener("DOMContentLoaded", function () {
 			let voterListHtml =
 				"<h5>Registered Voters:</h5><table class='table table-bordered'><thead><tr><th>Address</th><th>Status</th></tr></thead><tbody>";
 
-			// Fetch status for each voter
+			// Loop through voters and fetch status from blockchain
 			for (let i = 0; i < voters.length; i++) {
-				const voterAddress = voters[i];
-				const status = await getVoterStatus(ballotId, voterAddress); // Call smart contract
-				const label = status.hasVoted ? "Voted" : "Not Voted";
+				let voterAddress = voters[i];
+				// Normalize address to checksum
+				voterAddress = window.ethereum.utils
+					? window.ethereum.utils.toChecksumAddress(voterAddress)
+					: voterAddress;
 
+				let status;
+				try {
+					status = await getVoterStatus(ballotId, voterAddress);
+				} catch (err) {
+					console.error(`Error fetching status for ${voterAddress}:`, err);
+					status = { hasVoted: false };
+				}
+
+				const label = status.hasVoted ? "Voted" : "Not Voted";
 				voterListHtml += `<tr><td>${voterAddress}</td><td>${label}</td></tr>`;
 			}
 
