@@ -7,6 +7,7 @@ import {
 	getVotingResults,
 	endVoting,
 	isBallotClosed,
+	getVoterStatus,
 } from "../blockchain.js";
 window.fetchApprovedVoters = fetchApprovedVoters;
 
@@ -841,7 +842,7 @@ document
 		}
 	});
 
-//Voter reports
+// Voter reports
 document.addEventListener("DOMContentLoaded", function () {
 	const registeredVotersModal = document.getElementById(
 		"registeredVotersModal"
@@ -853,7 +854,6 @@ document.addEventListener("DOMContentLoaded", function () {
 	const voterDetailsContent = document.getElementById("voterDetailsContent");
 	const downloadVoterPdf = document.getElementById("downloadVoterPdf");
 
-	// Check if all necessary elements are available
 	if (
 		!registeredVotersModal ||
 		!fetchRegisteredVotersBtn ||
@@ -867,17 +867,16 @@ document.addEventListener("DOMContentLoaded", function () {
 		return;
 	}
 
-	// Open modal and load ballots
+	// Load ballots into dropdown when modal opens
 	registeredVotersModal.addEventListener("show.bs.modal", async function () {
 		await loadAdminBallots();
 	});
 
-	// Function to load Ballot IDs into the dropdown
 	async function loadAdminBallots() {
-		ballotSelect.innerHTML = "<option value=''>Loading...</option>"; // Show loading text
+		ballotSelect.innerHTML = "<option value=''>Loading...</option>";
 		try {
-			const { ballotIds, ballotTitles } = await getMyBallots(); // Fetch ballot data
-			ballotSelect.innerHTML = ""; // Clear the dropdown
+			const { ballotIds, ballotTitles } = await getMyBallots();
+			ballotSelect.innerHTML = "";
 
 			if (ballotIds.length === 0) {
 				ballotSelect.innerHTML = "<option value=''>No ballots found</option>";
@@ -897,49 +896,90 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 	}
 
-	// Fetch registered voters when the button is clicked
+	// Updated: Fetch registered voters with status
 	fetchRegisteredVotersBtn.addEventListener("click", async function () {
-		const ballotId = ballotSelect.value.trim(); // Get selected Ballot ID from dropdown
+		const ballotId = ballotSelect.value.trim();
 		if (!ballotId) {
 			alert("Please select a valid Ballot ID.");
 			return;
 		}
 
-		const voters = await getVotersForBallot(ballotId); // Fetch voters for the selected ballot
-
-		// Display voter details
 		voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
-		if (voters.length === 0) {
-			voterDetailsContent.innerHTML +=
-				"<p>No registered voters for this ballot.</p>";
-			return;
+		try {
+			const voters = await getVotersForBallot(ballotId);
+
+			if (voters.length === 0) {
+				voterDetailsContent.innerHTML +=
+					"<p>No registered voters for this ballot.</p>";
+				return;
+			}
+
+			// Fetch statuses in parallel for faster loading
+			const statusList = await Promise.all(
+				voters.map((voter) => getVoterStatus(ballotId, voter))
+			);
+
+			let voterTableHtml = `
+				<h5>Registered Voters:</h5>
+				<table class="table table-bordered">
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>MetaMask Address</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					<tbody>
+			`;
+
+			voters.forEach((voter, index) => {
+				const status = statusList[index];
+				const badge = status.hasVoted
+					? `<span class="badge bg-success">Voted</span>`
+					: `<span class="badge bg-warning text-dark">Not Voted</span>`;
+
+				voterTableHtml += `
+					<tr>
+						<td>${index + 1}</td>
+						<td>${voter}</td>
+						<td>${badge}</td>
+					</tr>
+				`;
+			});
+
+			voterTableHtml += `
+					</tbody>
+				</table>
+			`;
+
+			voterDetailsContent.innerHTML += voterTableHtml;
+		} catch (error) {
+			console.error("Error fetching voters:", error);
+			voterDetailsContent.innerHTML += `<p class="text-danger">Failed to load voters.</p>`;
 		}
-
-		let voterListHtml = "<h5>Registered Voters:</h5><ul>";
-		voters.forEach((voter) => {
-			voterListHtml += `<li>${voter}</li>`;
-		});
-		voterListHtml += "</ul>";
-
-		voterDetailsContent.innerHTML += voterListHtml;
 	});
 
-	// Download the voter details as a PDF
+	// Updated: PDF download renders the table
 	downloadVoterPdf.addEventListener("click", () => {
 		const voterDetails = voterDetailsContent.innerHTML;
-		if (!voterDetails) {
+		if (!voterDetails || voterDetails.trim() === "") {
 			alert("No data available to download.");
 			return;
 		}
 
-		const pdfContent = `<div>${voterDetails}</div>`;
+		const pdfContent = `
+			<div style="font-family: Arial, sans-serif; padding: 20px;">
+				<h2>Registered Voters</h2>
+				${voterDetails}
+			</div>
+		`;
 
 		const opt = {
 			margin: 10,
 			filename: `Registered_Voters_${new Date().toISOString()}.pdf`,
 			image: { type: "jpeg", quality: 0.98 },
-			html2canvas: { scale: 2 },
+			html2canvas: { scale: 2, logging: false, useCORS: true },
 			jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
 		};
 

@@ -717,6 +717,21 @@ export async function authenticateVoter(ballotId, password) {
 		return { isAuthenticated: false, hasVoted: false, ballotId: null };
 	}
 }
+export async function getVoterStatus(ballotId, voterAddress) {
+	try {
+		const result = await contract.methods
+			.getVoterStatus(ballotId, voterAddress)
+			.call();
+
+		return {
+			isRegistered: result[0],
+			hasVoted: result[1],
+		};
+	} catch (error) {
+		console.error("Get voter status error:", error);
+		return { isRegistered: false, hasVoted: false };
+	}
+}
 
 /**
  * Cast multiple votes in one transaction
