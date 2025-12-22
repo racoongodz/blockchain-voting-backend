@@ -855,7 +855,6 @@ document.addEventListener("DOMContentLoaded", function () {
 	const voterDetailsContent = document.getElementById("voterDetailsContent");
 	const downloadVoterPdf = document.getElementById("downloadVoterPdf");
 
-	// Safety check for all required elements
 	if (
 		!registeredVotersModal ||
 		!fetchRegisteredVotersBtn ||
@@ -909,10 +908,9 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 
 		try {
-			// Fetch voters and their vote status from the contract
-			const result = await getVotersWithStatus(ballotId);
-			const voterAddresses = result.map((v) => v.address);
-			const votedStatuses = result.map((v) => v.hasVoted);
+			const { 0: voterAddresses, 1: votedStatuses } = await getVotersWithStatus(
+				ballotId
+			);
 
 			voterDetailsContent.innerHTML = `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
@@ -922,14 +920,39 @@ document.addEventListener("DOMContentLoaded", function () {
 				return;
 			}
 
-			let voterListHtml = "<h5>Registered Voters:</h5><ul>";
-			for (let i = 0; i < voterAddresses.length; i++) {
-				const label = votedStatuses[i] ? "Voted" : "Not Voted";
-				voterListHtml += `<li>${voterAddresses[i]} - ${label}</li>`;
-			}
-			voterListHtml += "</ul>";
+			// Create table
+			let tableHtml = `
+				<table class="table table-striped table-bordered">
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Voter Address</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					<tbody>
+			`;
 
-			voterDetailsContent.innerHTML += voterListHtml;
+			for (let i = 0; i < voterAddresses.length; i++) {
+				const statusLabel = votedStatuses[i] ? "Voted" : "Not Voted";
+				const badgeClass = votedStatuses[i]
+					? "badge bg-success"
+					: "badge bg-warning text-dark";
+				tableHtml += `
+					<tr>
+						<td>${i + 1}</td>
+						<td>${voterAddresses[i]}</td>
+						<td><span class="${badgeClass}">${statusLabel}</span></td>
+					</tr>
+				`;
+			}
+
+			tableHtml += `
+					</tbody>
+				</table>
+			`;
+
+			voterDetailsContent.innerHTML += tableHtml;
 		} catch (error) {
 			console.error("Error fetching registered voters:", error);
 			voterDetailsContent.innerHTML +=
