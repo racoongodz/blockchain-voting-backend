@@ -324,33 +324,37 @@ document.addEventListener("DOMContentLoaded", function () {
 
 		const pdfContent = `
         <div style="font-family: Arial, sans-serif; width: 100%; text-align: center;">
-            <!-- Header with logo beside text, fully centered -->
-            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px; gap: 15px;">
-                <img src="${logoBase64}" alt="School Logo" style="height: 80px; width: auto;" />
-                <div style="text-align: left;">
-                    <h2 style="margin: 0; font-size: 18pt; font-weight: bold;">IMMACULATE CONCEPTION - I COLLEGE OF ARTS AND TECHNOLOGY</h2>
-                    <p style="margin: 0; font-size: 12pt;">Blockchain Based Voting System</p>
+            <!-- Responsive Header with logo beside text -->
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: center; margin-bottom: 20px; gap: 15px;">
+                <img src="${logoBase64}" alt="School Logo" style="height: 80px; width: auto; flex-shrink: 0;" />
+                <div style="max-width: 70%; text-align: center;">
+                    <h2 style="margin: 0; font-size: clamp(14pt, 2vw, 18pt); font-weight: bold;">
+                        IMMACULATE CONCEPTION - I COLLEGE OF ARTS AND TECHNOLOGY
+                    </h2>
+                    <p style="margin: 0; font-size: clamp(10pt, 1.5vw, 12pt);">
+                        Block-chain Based Voting System
+                    </p>
                 </div>
             </div>
 
             <hr>
 
             <!-- Ballot details -->
-            <div>
-                <h3 style="margin-bottom: 10px;">Ballot Details</h3>
+            <div style="text-align: left; margin: 0 auto; max-width: 90%;">
+                <h3 style="margin-bottom: 10px; text-align: center;">Ballot Details</h3>
                 <p><strong>Ballot ID:</strong> ${details.ballotId}</p>
                 <p><strong>Ballot Title:</strong> ${details.title}</p>
                 <p><strong>Date:</strong> ${currentDate}</p>
 
-                <h4 style="margin-top: 20px;">Positions & Candidates:</h4>
-                <ul style="list-style-type: none; padding: 0;">
+                <h4 style="margin-top: 20px; text-align: center;">Positions & Candidates:</h4>
+                <ul style="padding-left: 20px; list-style-position: inside;">
                     ${details.positions
 											.map(
 												(position) => `
                         <li style="margin-bottom: 10px;"><strong>${
 													position.name
 												}</strong>
-                            <ul style="list-style-type: disc; margin-left: 20px;">
+                            <ul style="padding-left: 20px; list-style-position: inside; margin-top: 5px;">
                                 ${position.candidates
 																	.map((candidate) => `<li>${candidate}</li>`)
 																	.join("")}
