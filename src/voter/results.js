@@ -28,12 +28,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 	let resultsHTML = `<h4>${ballotTitle}</h4>`;
 
 	results.positions.forEach((position, index) => {
+		// Convert vote counts to BigInt safely
+		const voteCounts = results.voteCounts[index].map((v) => BigInt(v));
+		const maxVotes = voteCounts.reduce((a, b) => (a > b ? a : b), 0n);
+
 		resultsHTML += `<h5 class="mt-3">${position}</h5><ul class="list-group">`;
+
 		results.candidates[index].forEach((candidate, cIndex) => {
-			resultsHTML += `<li class="list-group-item d-flex justify-content-between">
-                ${candidate} <span class="badge bg-primary">${results.voteCounts[index][cIndex]} votes</span>
-            </li>`;
+			const candidateVotes = voteCounts[cIndex];
+			const isWinner = candidateVotes === maxVotes; // all with maxVotes are winners
+
+			resultsHTML += `<li class="list-group-item d-flex justify-content-between ${
+				isWinner ? "list-group-item-success fw-bold" : ""
+			}">
+				${candidate} ${isWinner ? '<span class="badge bg-success">WINNER</span>' : ""}
+				<span class="badge bg-primary">${candidateVotes} votes</span>
+			</li>`;
 		});
+
 		resultsHTML += "</ul><br>";
 	});
 
