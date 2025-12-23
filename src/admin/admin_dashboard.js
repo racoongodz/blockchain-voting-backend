@@ -1224,8 +1224,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
 			const results = await getVotingResults(ballotId);
 
-			// Save results for PDF
-			resultsDisplay.dataset.results = JSON.stringify(results);
+			// Convert BigInt voteCounts to numbers
+			const serializableResults = {
+				positions: results.positions,
+				candidates: results.candidates,
+				voteCounts: results.voteCounts.map((arr) => arr.map((v) => Number(v))), // convert BigInt to Number
+			};
+
+			resultsDisplay.dataset.results = JSON.stringify(serializableResults);
 
 			// Build modal display
 			if (!results || results.positions.length === 0) {
