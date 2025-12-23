@@ -804,6 +804,13 @@ document
 		}
 
 		try {
+			console.log("ADD VOTER CHECK:", {
+				full_name: fullName,
+				email: email,
+				metamask_address: metamaskAddress,
+				ballot_id: ballotId,
+			});
+
 			const response = await fetch(
 				"https://blockchain-voting-backend.onrender.com/addApprovedVoter",
 				{
