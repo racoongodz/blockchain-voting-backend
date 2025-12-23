@@ -82,11 +82,17 @@ document
 		}
 
 		try {
+			// Request MetaMask accounts
+			if (!window.ethereum) {
+				alert("MetaMask is required for login.");
+				return;
+			}
 			const accounts = await ethereum.request({
 				method: "eth_requestAccounts",
 			});
 			const connectedAddress = accounts[0];
 
+			// Authenticate voter
 			const {
 				isAuthenticated,
 				hasVoted,
@@ -98,22 +104,30 @@ document
 				return;
 			}
 
+			// Check if ballot is closed
 			const closed = await isBallotClosed(voterBallotId);
-			if (closed === true) {
-				alert("Voting has ended for this ballot. Redirecting to results...");
-				window.location.href = `results.html?ballotId=${voterBallotId}`;
-				return;
-			} else if (closed === null) {
+
+			if (closed === null) {
 				alert("Error checking ballot status. Please try again.");
 				return;
 			}
 
-			if (hasVoted) {
-				alert("You have already voted. Redirecting to results...");
+			if (closed === true) {
+				// Voting ended → allow viewing results
+				alert("Voting has ended for this ballot. Redirecting to results...");
 				window.location.href = `results.html?ballotId=${voterBallotId}`;
 				return;
 			}
 
+			// Ballot is still open
+			if (hasVoted) {
+				alert(
+					"You have already voted. You cannot vote again until voting ends."
+				);
+				return; // Do NOT redirect to results yet
+			}
+
+			// Store session info and redirect to voting page
 			localStorage.setItem("ballotId", voterBallotId);
 			localStorage.setItem("voterAddress", connectedAddress);
 
