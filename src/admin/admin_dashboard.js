@@ -782,6 +782,7 @@ async function deleteVoter(voterId, ballotId, button) {
 }
 
 function openRegisterVoterModal() {
+	populateBallotDropdownFromContract();
 	let modal = new bootstrap.Modal(
 		document.getElementById("addApprovedVoterModal")
 	);
@@ -791,26 +792,32 @@ function openRegisterVoterModal() {
 document
 	.getElementById("addVoterButton")
 	.addEventListener("click", async function () {
+		// Get voter info
 		const fullName = document.getElementById("voterName").value.trim();
 		const email = document.getElementById("voterEmail").value.trim();
 		const metamaskAddress = document
 			.getElementById("voterAddress")
 			.value.trim();
-		const ballotId = document.getElementById("voterBallotId").value.trim();
 
+		// Get selected ballot ID from dropdown
+		const select = document.getElementById("voterBallotSelect");
+		const ballotId = select.value;
+
+		// Validate inputs
 		if (!fullName || !email || !metamaskAddress || !ballotId) {
-			alert("❌ All fields are required.");
+			alert("❌ All fields are required, including selecting a ballot.");
 			return;
 		}
 
 		try {
 			console.log("ADD VOTER CHECK:", {
 				full_name: fullName,
-				email: email,
+				email,
 				metamask_address: metamaskAddress,
 				ballot_id: ballotId,
 			});
 
+			// Send data to backend
 			const response = await fetch(
 				"https://blockchain-voting-backend.onrender.com/addApprovedVoter",
 				{
@@ -818,7 +825,7 @@ document
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						full_name: fullName,
-						email: email,
+						email,
 						metamask_address: metamaskAddress,
 						ballot_id: ballotId,
 					}),
@@ -827,28 +834,59 @@ document
 
 			const data = await response.json();
 
-			if (response.ok) {
-				alert("✅ Voter added successfully!");
-
-				// Reset form and close modal properly
-				document.getElementById("addApprovedVoterForm").reset();
-
-				let modalElement = document.getElementById("addApprovedVoterModal");
-				let addVoterModal = bootstrap.Modal.getInstance(modalElement);
-				if (addVoterModal) {
-					addVoterModal.hide();
-				}
-
-				// Ensure aria-hidden is properly removed
-				modalElement.removeAttribute("aria-hidden");
-
-				fetchApprovedVoters(); // Refresh voter list
+			// Handle backend errors
+			if (!response.ok) {
+				alert(`❌ ${data.error}`);
+				return;
 			}
+
+			// Success
+			alert("✅ Voter added successfully!");
+
+			// Reset form and close modal
+			document.getElementById("addApprovedVoterForm").reset();
+			const modalElement = document.getElementById("addApprovedVoterModal");
+			const addVoterModal = bootstrap.Modal.getInstance(modalElement);
+			if (addVoterModal) addVoterModal.hide();
+			modalElement.removeAttribute("aria-hidden");
+
+			// Refresh the voter list
+			fetchApprovedVoters();
 		} catch (error) {
 			console.error("❌ Error adding voter:", error);
 			alert("❌ Failed to add voter. Please try again.");
 		}
 	});
+
+async function populateBallotDropdownFromContract() {
+	const select = document.getElementById("voterBallotSelect");
+	select.innerHTML = ""; // Clear existing options
+
+	try {
+		const { ballotIds, ballotTitles } = await getMyBallots();
+
+		if (!ballotIds || ballotIds.length === 0) {
+			const option = document.createElement("option");
+			option.value = "";
+			option.textContent = "No ballots found";
+			select.appendChild(option);
+			return;
+		}
+
+		ballotIds.forEach((id, index) => {
+			const option = document.createElement("option");
+			option.value = id; // numeric ballot ID expected by backend
+			option.textContent = `${ballotTitles[index]} (ID: ${id})`;
+			select.appendChild(option);
+		});
+	} catch (error) {
+		console.error("Error populating ballot dropdown:", error);
+		const option = document.createElement("option");
+		option.value = "";
+		option.textContent = "Error loading ballots";
+		select.appendChild(option);
+	}
+}
 
 // Registered Voters Report
 document.addEventListener("DOMContentLoaded", function () {
