@@ -317,32 +317,46 @@ document.addEventListener("DOMContentLoaded", function () {
 
 	function downloadBallotDetailsAsPDF(details) {
 		const pdfContent = `
+        <div style="font-family: Arial, sans-serif; width: 100%;">
+            <!-- Header with school name and logo -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="flex: 1;">
+                    <h2 style="margin: 0; font-size: 18pt; font-weight: bold;">IMMACULATE CONCEPTION - I COLLEGE OF ARTS AND TECHNOLOGY</h2>
+                    <p style="margin: 0; font-size: 12pt;">College of Computer Studies and Information Technology</p>
+                </div>
+                <div style="flex-shrink: 0; margin-left: 20px;">
+                    <img src="https://iciap.edu.ph/ici/assets/images/ici/logo.png" alt="School Logo" style="height: 80px; width: auto;" />
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Ballot details -->
             <div>
-                <h2>Ballot Details</h2>
+                <h3 style="margin-bottom: 10px;">Ballot Details</h3>
                 <p><strong>Ballot ID:</strong> ${details.ballotId}</p>
                 <p><strong>Ballot Title:</strong> ${details.title}</p>
-                <hr>
-                <h4>Positions & Candidates:</h4>
+                <p><strong>Date:</strong> ${details.date || "N/A"}</p>
+
+                <h4 style="margin-top: 20px;">Positions & Candidates:</h4>
                 <ul>
                     ${details.positions
 											.map(
 												(position) => `
-                                <li><strong>${position.name}</strong>
-                                    <ul>
-                                        ${position.candidates
-																					.map(
-																						(candidate) =>
-																							`<li>${candidate}</li>`
-																					)
-																					.join("")}
-                                    </ul>
-                                </li>
-                            `
+                        <li><strong>${position.name}</strong>
+                            <ul>
+                                ${position.candidates
+																	.map((candidate) => `<li>${candidate}</li>`)
+																	.join("")}
+                            </ul>
+                        </li>
+                    `
 											)
 											.join("")}
                 </ul>
             </div>
-        `;
+        </div>
+    `;
 
 		const opt = {
 			margin: 10,
