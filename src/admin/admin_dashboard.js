@@ -1032,6 +1032,9 @@ document.addEventListener("DOMContentLoaded", function () {
 	// Download PDF
 	downloadVoterPdf.addEventListener("click", () => {
 		const voterDetails = voterDetailsContent.innerHTML;
+		const ballotTitle = ballotTitleContent
+			? ballotTitleContent.textContent
+			: "N/A"; // get ballot title
 		if (!voterDetails) {
 			alert("No data available to download.");
 			return;
@@ -1063,8 +1066,8 @@ document.addEventListener("DOMContentLoaded", function () {
             <!-- Voter details -->
             <div style="text-align: left; margin: 0 auto; max-width: 90%;">
                 <h3 style="margin-bottom: 10px; text-align: center;">Registered Voters</h3>
+                <p style="text-align: center;"><strong>Ballot Title:</strong> ${ballotTitle}</p>
                 <p style="text-align: center;"><strong>Date:</strong> ${currentDate}</p>
-				<p><strong>Ballot Title:</strong> ${details.title}</p>
                 <div>${voterDetails}</div>
             </div>
         </div>
@@ -1072,7 +1075,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 		const opt = {
 			margin: 10,
-			filename: `Registered_Voters_${new Date().toISOString()}.pdf`,
+			filename: `Registered_Voters_${ballotTitle}_${new Date().toISOString()}.pdf`,
 			image: { type: "jpeg", quality: 0.98 },
 			html2canvas: { scale: 2 },
 			jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
