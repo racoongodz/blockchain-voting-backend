@@ -1,4 +1,4 @@
-import { getVotingResults } from "../blockchain.js";
+import { getVotingResults, getBallotDetails } from "../blockchain.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
 	const resultsContainer = document.getElementById("results-content");
@@ -16,6 +16,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 		return;
 	}
 
+	// Fetch ballot details (for title)
+	const ballotDetails = await getBallotDetails(ballotId);
+	const ballotTitle = ballotDetails
+		? ballotDetails.title
+		: `Ballot ID: ${ballotId}`;
+
+	// Fetch voting results
 	const results = await getVotingResults(ballotId);
 
 	if (!results || results.positions.length === 0) {
@@ -23,9 +30,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 		return;
 	}
 
-	// Display Ballot ID as title
-	const ballotTitle = `Ballot ID: ${ballotId}`;
+	// Display ballot title and ID
 	let resultsHTML = `<h4>${ballotTitle}</h4>`;
+	resultsHTML += `<p><strong>Ballot ID:</strong> ${ballotId}</p>`;
 
 	results.positions.forEach((position, index) => {
 		// Convert vote counts to BigInt safely
@@ -36,14 +43,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 		results.candidates[index].forEach((candidate, cIndex) => {
 			const candidateVotes = voteCounts[cIndex];
-			const isWinner = candidateVotes === maxVotes; // all with maxVotes are winners
+			const isWinner = candidateVotes === maxVotes; // Highlight all winners (ties)
 
 			resultsHTML += `<li class="list-group-item d-flex justify-content-between ${
 				isWinner ? "list-group-item-success fw-bold" : ""
 			}">
-				${candidate} ${isWinner ? '<span class="badge bg-success">WINNER</span>' : ""}
-				<span class="badge bg-primary">${candidateVotes} votes</span>
-			</li>`;
+                ${candidate} ${
+				isWinner ? '<span class="badge bg-success">WINNER</span>' : ""
+			}
+                <span class="badge bg-primary">${candidateVotes} votes</span>
+            </li>`;
 		});
 
 		resultsHTML += "</ul><br>";
