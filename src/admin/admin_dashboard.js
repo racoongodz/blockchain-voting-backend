@@ -1064,6 +1064,7 @@ document.addEventListener("DOMContentLoaded", function () {
             <div style="text-align: left; margin: 0 auto; max-width: 90%;">
                 <h3 style="margin-bottom: 10px; text-align: center;">Registered Voters</h3>
                 <p style="text-align: center;"><strong>Date:</strong> ${currentDate}</p>
+				<p><strong>Ballot Title:</strong> ${details.title}</p>
                 <div>${voterDetails}</div>
             </div>
         </div>
