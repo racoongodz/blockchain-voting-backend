@@ -410,12 +410,10 @@ async function fetchPendingVoters() {
 
 		let data = await response.json();
 
-		// ✅ Deduplicate by voter.id
+		// Deduplicate by voter.id
 		const uniqueVotersMap = new Map();
 		data.forEach((voter) => {
-			if (!uniqueVotersMap.has(voter.id)) {
-				uniqueVotersMap.set(voter.id, voter);
-			}
+			if (!uniqueVotersMap.has(voter.id)) uniqueVotersMap.set(voter.id, voter);
 		});
 		data = Array.from(uniqueVotersMap.values());
 
@@ -424,17 +422,32 @@ async function fetchPendingVoters() {
 			return;
 		}
 
+		// Build a map of ballot_id + full_name -> count for same-name warning
+		const nameCountMap = {};
 		data.forEach((voter) => {
-			// ✅ If id_photo is a full URL, use it directly. Otherwise, prepend backend path.
+			const key = `${voter.ballot_id}||${voter.full_name}`;
+			nameCountMap[key] = (nameCountMap[key] || 0) + 1;
+		});
+
+		data.forEach((voter) => {
+			// Use full URL if available
 			const photoUrl = voter.id_photo.startsWith("http")
 				? voter.id_photo
 				: `https://blockchain-voting-backend.onrender.com/uploads/${voter.id_photo}`;
 
 			const row = document.createElement("tr");
+
+			// Display name with badge if there are duplicates
+			const key = `${voter.ballot_id}||${voter.full_name}`;
+			const nameDisplay =
+				nameCountMap[key] > 1
+					? `<span class="badge rounded-pill bg-warning text-dark" title="${nameCountMap[key]} voters share this name">${voter.full_name}</span>`
+					: voter.full_name;
+
 			row.innerHTML = `
 				<td>${voter.id}</td>
 				<td>${voter.ballot_id}</td>
-				<td>${voter.full_name}</td>
+				<td>${nameDisplay}</td>
 				<td>${voter.email}</td>
 				<td>${voter.metamask_address}</td>
 				<td>
@@ -443,8 +456,8 @@ async function fetchPendingVoters() {
 					</a>
 				</td>
 				<td>
-					<button onclick="approveVoter(${voter.id})" class="btn btn-success">Approve</button>
-					<button onclick="rejectVoter(${voter.id})" class="btn btn-danger">Reject</button>
+					<button onclick="approveVoter(${voter.id})" class="btn btn-success btn-sm">Approve</button>
+					<button onclick="rejectVoter(${voter.id})" class="btn btn-danger btn-sm">Reject</button>
 				</td>
 			`;
 			tableBody.appendChild(row);

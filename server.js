@@ -288,6 +288,30 @@ app.get("/search-approved-voters", async (req, res) => {
 	}
 });
 
+// Check pending voters with the same full name
+app.get("/api/pending-name-conflicts", async (req, res) => {
+	const { ballot_id, full_name } = req.query;
+
+	if (!ballot_id || !full_name)
+		return res.status(400).json({ error: "ballot_id and full_name required." });
+
+	try {
+		const { rows } = await db.query(
+			`
+      SELECT id, full_name, email, metamask_address, id_photo
+      FROM pending_voters
+      WHERE ballot_id = $1 AND full_name = $2
+      `,
+			[ballot_id, full_name]
+		);
+
+		res.json(rows);
+	} catch (err) {
+		console.error("Error checking name conflicts:", err);
+		res.status(500).json({ error: "Failed to check name conflicts." });
+	}
+});
+
 // ======================
 // Manually Add Approved Voter
 // ======================
