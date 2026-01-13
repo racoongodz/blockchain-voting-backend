@@ -37,9 +37,51 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 			return res.status(400).json({ error: "All fields are required." });
 		}
 
+		// ======================
+		// STEP 1: Duplicate Checks
+		// ======================
+
+		// Check duplicate MetaMask (pending + approved)
+		const walletCheck = await db.query(
+			`
+			SELECT 1 FROM pending_voters 
+			WHERE ballot_id = $1 AND metamask_address = $2
+			UNION
+			SELECT 1 FROM approved_voters 
+			WHERE ballot_id = $1 AND metamask_address = $2
+			`,
+			[ballot_id, metamask_address]
+		);
+
+		if (walletCheck.rows.length > 0) {
+			return res.status(400).json({
+				error: "This MetaMask address is already registered for this ballot.",
+			});
+		}
+
+		// Check duplicate email (pending + approved)
+		const emailCheck = await db.query(
+			`
+			SELECT 1 FROM pending_voters 
+			WHERE ballot_id = $1 AND email = $2
+			UNION
+			SELECT 1 FROM approved_voters 
+			WHERE ballot_id = $1 AND email = $2
+			`,
+			[ballot_id, email]
+		);
+
+		if (emailCheck.rows.length > 0) {
+			return res.status(400).json({
+				error: "This email is already used for this ballot.",
+			});
+		}
+
+		// ======================
 		// Upload photo to Supabase Storage
+		// ======================
 		const filePath = `voter-photos/${Date.now()}-${file.originalname}`;
-		const { data, error: uploadError } = await supabase.storage
+		const { error: uploadError } = await supabase.storage
 			.from("voter-photos")
 			.upload(filePath, file.buffer, { contentType: file.mimetype });
 
@@ -59,12 +101,16 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 
 		const id_photo_url = publicUrlData.publicUrl;
 
-		// Insert voter into pending_voters table
+		// ======================
+		// Insert voter into pending_voters
+		// ======================
 		const sql = `
-      INSERT INTO pending_voters (ballot_id, full_name, email, metamask_address, id_photo)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *
-    `;
+			INSERT INTO pending_voters 
+			(ballot_id, full_name, email, metamask_address, id_photo)
+			VALUES ($1, $2, $3, $4, $5)
+			RETURNING *
+		`;
+
 		const { rows } = await db.query(sql, [
 			ballot_id,
 			full_name,
@@ -83,6 +129,7 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 		res.status(500).json({ error: "Internal server error" });
 	}
 });
+
 
 // ======================
 // Fetch Pending Voters
