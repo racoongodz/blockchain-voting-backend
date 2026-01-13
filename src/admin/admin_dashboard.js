@@ -636,6 +636,25 @@ async function fetchApprovedVoters() {
 			voters.forEach((voter) => {
 				const key = `${ballotId}||${voter.full_name}`;
 				nameCountMap[key] = (nameCountMap[key] || 0) + 1;
+				const row = document.createElement("tr");
+				row.innerHTML = `
+    <td>${voter.id}</td>
+    <td>${nameDisplay}</td>
+    <td>${voter.email}</td>
+    <td>${voter.metamask_address}</td>
+    <td>
+        <span id="${passwordId}" class="password-hidden">******</span>
+        <button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">Show</button>
+    </td>
+    <td>
+        <button 
+            class="btn btn-sm btn-danger" 
+            onclick="window.unapproveVoter(${voter.id}, '${ballotId}', this)"
+        >
+            Unapprove
+        </button>
+    </td>
+`;
 			});
 
 			// Render rows
@@ -701,6 +720,33 @@ async function fetchApprovedVoters() {
 		listContainer.innerHTML = `<p class="text-center text-danger">Error fetching approved voters.</p>`;
 	}
 }
+window.unapproveVoter = async (voterId, ballotId, btnElement) => {
+	const confirmed = confirm("Are you sure you want to unapprove this voter?");
+	if (!confirmed) return;
+
+	try {
+		const response = await fetch(
+			"https://blockchain-voting-backend.onrender.com/unapprove-voter",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ voter_id: voterId, ballot_id: ballotId }),
+			}
+		);
+
+		const result = await response.json();
+		if (!response.ok) throw new Error(result.error || "Failed to unapprove");
+
+		// Remove row from table
+		const row = btnElement.closest("tr");
+		row.remove();
+
+		alert("Voter has been unapproved successfully!");
+	} catch (err) {
+		console.error("❌ Error unapproving voter:", err);
+		alert("Failed to unapprove voter. Check console for details.");
+	}
+};
 
 // Password toggle helper
 window.togglePassword = (id, password) => {
