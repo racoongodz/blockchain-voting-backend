@@ -567,7 +567,7 @@ async function fetchApprovedVoters() {
 			throw new Error(`Failed to fetch approved voters: ${response.status}`);
 		const groupedVoters = await response.json();
 
-		// Track all containers & toggle buttons
+		// Track containers & toggle buttons
 		const allContainers = [];
 		const allButtons = [];
 
@@ -578,7 +578,7 @@ async function fetchApprovedVoters() {
 			const ballotContainer = document.createElement("div");
 			ballotContainer.classList.add("mb-4");
 
-			// 🔹 Title + Toggle Button Container
+			// Title + Toggle
 			const titleContainer = document.createElement("div");
 			titleContainer.classList.add(
 				"d-flex",
@@ -587,13 +587,11 @@ async function fetchApprovedVoters() {
 				"mb-2"
 			);
 
-			// Ballot Title
 			const ballotTitle = document.createElement("h4");
 			ballotTitle.textContent = ballotTitles?.[index]
 				? `${ballotTitles[index]} (ID: ${ballotId})`
 				: `Ballot ID: ${ballotId}`;
 
-			// Toggle Button
 			const toggleButton = document.createElement("button");
 			toggleButton.textContent = "Show Voters";
 			toggleButton.classList.add(
@@ -603,15 +601,21 @@ async function fetchApprovedVoters() {
 				"ms-2"
 			);
 
-			// Container for voters table + add button
 			const votersContainer = document.createElement("div");
-			votersContainer.style.display = "none"; // hidden by default
+			votersContainer.style.display = "none";
 
-			// Add to Blockchain Button
+			// Add to Blockchain button
 			const addButton = document.createElement("button");
 			addButton.textContent = "Add to Blockchain";
 			addButton.classList.add("btn", "btn-primary", "mb-2");
 			addButton.onclick = () => registerApprovedVoters(ballotId);
+
+			// Disable if all voters are already on-chain
+			const allOnChain = voters.every((v) => v.is_onchain);
+			addButton.disabled = allOnChain;
+			if (allOnChain)
+				addButton.title = "All voters are already registered on-chain";
+
 			votersContainer.appendChild(addButton);
 
 			// Table
@@ -625,16 +629,18 @@ async function fetchApprovedVoters() {
 						<th>Email</th>
 						<th>MetaMask Address</th>
 						<th>Voter Password</th>
+						<th>Status</th>
+						<th>Action</th>
 					</tr>
 				</thead>
 				<tbody></tbody>
 			`;
 			const tbody = table.querySelector("tbody");
 
-			// Step 1: Build same-name map per ballot
+			// Step 1: Build same-name map
 			const nameCountMap = {};
-			voters.forEach((voter) => {
-				const key = `${ballotId}||${voter.full_name}`;
+			voters.forEach((v) => {
+				const key = `${ballotId}||${v.full_name}`;
 				nameCountMap[key] = (nameCountMap[key] || 0) + 1;
 			});
 
@@ -643,64 +649,66 @@ async function fetchApprovedVoters() {
 				const passwordId = `password-${ballotId}-${vIndex}`;
 				const nameKey = `${ballotId}||${voter.full_name}`;
 
-				// Display name with badge if duplicates exist
 				const nameDisplay =
 					nameCountMap[nameKey] > 1
 						? `<span class="badge rounded-pill bg-warning text-dark" 
-                     title="⚠ Warning: ${nameCountMap[nameKey]} approved voters share this name.">
-                 ${voter.full_name}
-               </span>`
+                           title="⚠ Warning: ${nameCountMap[nameKey]} approved voters share this name.">
+                         ${voter.full_name}
+                       </span>`
 						: voter.full_name;
 
-				// ✅ Create only one row, including Unapprove button
+				const statusBadge = voter.is_onchain
+					? `<span class="badge rounded-pill bg-success">On-Chain</span>`
+					: `<span class="badge rounded-pill bg-warning text-dark">Off-Chain</span>`;
+
 				const row = document.createElement("tr");
 				row.innerHTML = `
-        <td>${voter.id}</td>
-        <td>${nameDisplay}</td>
-        <td>${voter.email}</td>
-        <td>${voter.metamask_address}</td>
-        <td>
-            <span id="${passwordId}" class="password-hidden">******</span>
-            <button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">Show</button>
-        </td>
-        <td>
-            <button 
-                class="btn btn-sm btn-danger" 
-                onclick="window.unapproveVoter(${voter.id}, '${ballotId}', this)"
-            >
-                Unapprove
-            </button>
-        </td>
-    `;
-
+					<td>${voter.id}</td>
+					<td>${nameDisplay}</td>
+					<td>${voter.email}</td>
+					<td>${voter.metamask_address}</td>
+					<td>
+						<span id="${passwordId}" class="password-hidden">******</span>
+						<button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${
+					voter.voter_password
+				}')">Show</button>
+					</td>
+					<td>${statusBadge}</td>
+					<td>
+						<button 
+							class="btn btn-sm btn-danger" 
+							onclick="window.unapproveVoter(${voter.id}, '${ballotId}', this)"
+							${
+								voter.is_onchain
+									? "disabled title='Cannot unapprove: voter is on-chain'"
+									: ""
+							}
+						>
+							Unapprove
+						</button>
+					</td>
+				`;
 				tbody.appendChild(row);
 			});
 
 			votersContainer.appendChild(table);
 
-			// 🔹 Accordion Toggle functionality
+			// Accordion toggle
 			toggleButton.onclick = () => {
 				const isHidden = votersContainer.style.display === "none";
-
-				// Hide all others
 				allContainers.forEach((c) => (c.style.display = "none"));
 				allButtons.forEach((b) => (b.textContent = "Show Voters"));
-
-				// Show current if it was hidden
 				if (isHidden) {
 					votersContainer.style.display = "block";
 					toggleButton.textContent = "Hide Voters";
 				}
 			};
 
-			// Track containers & buttons for accordion behavior
 			allContainers.push(votersContainer);
 			allButtons.push(toggleButton);
 
-			// Append
 			titleContainer.appendChild(ballotTitle);
 			titleContainer.appendChild(toggleButton);
-
 			ballotContainer.appendChild(titleContainer);
 			ballotContainer.appendChild(votersContainer);
 			listContainer.appendChild(ballotContainer);
@@ -711,6 +719,8 @@ async function fetchApprovedVoters() {
 		listContainer.innerHTML = `<p class="text-center text-danger">Error fetching approved voters.</p>`;
 	}
 }
+
+// Unapprove voter
 window.unapproveVoter = async (voterId, ballotId, btnElement) => {
 	const confirmed = confirm("Are you sure you want to unapprove this voter?");
 	if (!confirmed) return;

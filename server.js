@@ -246,11 +246,18 @@ app.post("/approved-voters", async (req, res) => {
 		// Create placeholders for SQL query
 		const placeholders = ballot_ids.map((_, i) => `$${i + 1}`).join(",");
 		const sql = `
-      SELECT id, ballot_id, full_name, email, metamask_address, voter_password
-      FROM approved_voters
-      WHERE ballot_id IN (${placeholders})
-      ORDER BY ballot_id, id
-    `;
+  SELECT 
+    id,
+    ballot_id,
+    full_name,
+    email,
+    metamask_address,
+    voter_password,
+    is_onchain
+  FROM approved_voters
+  WHERE ballot_id IN (${placeholders})
+  ORDER BY ballot_id, id
+`;
 
 		const { rows } = await db.query(sql, ballot_ids);
 
@@ -267,6 +274,42 @@ app.post("/approved-voters", async (req, res) => {
 	} catch (err) {
 		console.error("Error fetching approved voters:", err);
 		res.status(500).json({ error: "Failed to fetch approved voters." });
+	}
+});
+// ======================
+// Manually Add Approved Voter
+// ======================
+app.post("/addApprovedVoter", async (req, res) => {
+	const { full_name, email, metamask_address, ballot_id } = req.body;
+	if (!full_name || !email || !metamask_address || !ballot_id)
+		return res.status(400).json({ error: "All fields are required." });
+
+	try {
+		// ✅ Only block duplicate MetaMask for the same ballot
+		const dupCheck = await db.query(
+			"SELECT * FROM approved_voters WHERE ballot_id=$1 AND metamask_address=$2",
+			[ballot_id, metamask_address]
+		);
+		if (dupCheck.rows.length > 0)
+			return res.status(400).json({
+				error:
+					"A voter with this MetaMask address is already approved for this ballot.",
+			});
+
+		// Generate a random password for the voter
+		const voter_password = Math.random().toString(36).slice(-8);
+
+		// Insert the voter
+		await db.query(
+			`INSERT INTO approved_voters (ballot_id, full_name, email, metamask_address, voter_password)
+             VALUES ($1,$2,$3,$4,$5)`,
+			[ballot_id, full_name, email, metamask_address, voter_password]
+		);
+
+		res.json({ success: true, message: "Voter manually added successfully!" });
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ error: "Failed to add voter." });
 	}
 });
 
@@ -309,43 +352,6 @@ app.get("/api/pending-name-conflicts", async (req, res) => {
 	} catch (err) {
 		console.error("Error checking name conflicts:", err);
 		res.status(500).json({ error: "Failed to check name conflicts." });
-	}
-});
-
-// ======================
-// Manually Add Approved Voter
-// ======================
-app.post("/addApprovedVoter", async (req, res) => {
-	const { full_name, email, metamask_address, ballot_id } = req.body;
-	if (!full_name || !email || !metamask_address || !ballot_id)
-		return res.status(400).json({ error: "All fields are required." });
-
-	try {
-		// ✅ Only block duplicate MetaMask for the same ballot
-		const dupCheck = await db.query(
-			"SELECT * FROM approved_voters WHERE ballot_id=$1 AND metamask_address=$2",
-			[ballot_id, metamask_address]
-		);
-		if (dupCheck.rows.length > 0)
-			return res.status(400).json({
-				error:
-					"A voter with this MetaMask address is already approved for this ballot.",
-			});
-
-		// Generate a random password for the voter
-		const voter_password = Math.random().toString(36).slice(-8);
-
-		// Insert the voter
-		await db.query(
-			`INSERT INTO approved_voters (ballot_id, full_name, email, metamask_address, voter_password)
-             VALUES ($1,$2,$3,$4,$5)`,
-			[ballot_id, full_name, email, metamask_address, voter_password]
-		);
-
-		res.json({ success: true, message: "Voter manually added successfully!" });
-	} catch (err) {
-		console.error(err);
-		res.status(500).json({ error: "Failed to add voter." });
 	}
 });
 
@@ -392,6 +398,33 @@ app.post("/unapprove-voter", async (req, res) => {
 	} catch (err) {
 		console.error("Error in /unapprove-voter:", err);
 		res.status(500).json({ error: "Failed to unapprove voter." });
+	}
+});
+
+// ======================
+// Mark Approved Voters as On-Chain
+// ======================
+app.post("/mark-onchain", async (req, res) => {
+	const { voterIds } = req.body;
+
+	if (!Array.isArray(voterIds) || voterIds.length === 0) {
+		return res.status(400).json({ error: "Voter IDs are required." });
+	}
+
+	try {
+		const placeholders = voterIds.map((_, i) => `$${i + 1}`).join(",");
+
+		await db.query(
+			`UPDATE approved_voters 
+       SET is_onchain = true 
+       WHERE id IN (${placeholders})`,
+			voterIds
+		);
+
+		res.json({ success: true });
+	} catch (err) {
+		console.error("Error marking voters on-chain:", err);
+		res.status(500).json({ error: "Failed to mark voters as on-chain." });
 	}
 });
 
