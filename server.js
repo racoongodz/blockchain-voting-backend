@@ -349,9 +349,9 @@ app.post("/addApprovedVoter", async (req, res) => {
 	}
 });
 
-// ======================
+// =====================
 // Fetch Approved Voters for Blockchain
-// ======================
+// =====================
 app.get("/api/getApprovedVoters", async (req, res) => {
 	try {
 		const { rows } = await db.query(
