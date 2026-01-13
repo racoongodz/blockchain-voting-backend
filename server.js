@@ -321,18 +321,24 @@ app.post("/addApprovedVoter", async (req, res) => {
 		return res.status(400).json({ error: "All fields are required." });
 
 	try {
+		// ✅ Only block duplicate MetaMask for the same ballot
 		const dupCheck = await db.query(
-			"SELECT * FROM approved_voters WHERE ballot_id=$1 AND (full_name=$2 OR metamask_address=$3)",
-			[ballot_id, full_name, metamask_address]
+			"SELECT * FROM approved_voters WHERE ballot_id=$1 AND metamask_address=$2",
+			[ballot_id, metamask_address]
 		);
 		if (dupCheck.rows.length > 0)
-			return res.status(400).json({ error: "Voter already exists." });
+			return res.status(400).json({
+				error:
+					"A voter with this MetaMask address is already approved for this ballot.",
+			});
 
+		// Generate a random password for the voter
 		const voter_password = Math.random().toString(36).slice(-8);
 
+		// Insert the voter
 		await db.query(
 			`INSERT INTO approved_voters (ballot_id, full_name, email, metamask_address, voter_password)
-       VALUES ($1,$2,$3,$4,$5)`,
+             VALUES ($1,$2,$3,$4,$5)`,
 			[ballot_id, full_name, email, metamask_address, voter_password]
 		);
 
