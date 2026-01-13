@@ -363,6 +363,37 @@ app.get("/api/getApprovedVoters", async (req, res) => {
 		res.status(500).json({ error: "Failed to fetch approved voters." });
 	}
 });
+// ======================
+// Unapprove Voter
+// ======================
+app.post("/unapprove-voter", async (req, res) => {
+	const { voter_id, ballot_id } = req.body;
+
+	if (!voter_id || !ballot_id) {
+		return res
+			.status(400)
+			.json({ error: "Voter ID and Ballot ID are required." });
+	}
+
+	try {
+		// Delete the voter from approved_voters
+		const { rowCount } = await db.query(
+			"DELETE FROM approved_voters WHERE id=$1 AND ballot_id=$2",
+			[voter_id, ballot_id]
+		);
+
+		if (rowCount === 0) {
+			return res
+				.status(404)
+				.json({ error: "Voter not found or already removed." });
+		}
+
+		res.json({ success: true, message: "Voter unapproved successfully." });
+	} catch (err) {
+		console.error("Error in /unapprove-voter:", err);
+		res.status(500).json({ error: "Failed to unapprove voter." });
+	}
+});
 
 // ======================
 // Test Endpoint
