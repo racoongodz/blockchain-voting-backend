@@ -636,25 +636,6 @@ async function fetchApprovedVoters() {
 			voters.forEach((voter) => {
 				const key = `${ballotId}||${voter.full_name}`;
 				nameCountMap[key] = (nameCountMap[key] || 0) + 1;
-				const row = document.createElement("tr");
-				row.innerHTML = `
-    <td>${voter.id}</td>
-    <td>${nameDisplay}</td>
-    <td>${voter.email}</td>
-    <td>${voter.metamask_address}</td>
-    <td>
-        <span id="${passwordId}" class="password-hidden">******</span>
-        <button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">Show</button>
-    </td>
-    <td>
-        <button 
-            class="btn btn-sm btn-danger" 
-            onclick="window.unapproveVoter(${voter.id}, '${ballotId}', this)"
-        >
-            Unapprove
-        </button>
-    </td>
-`;
 			});
 
 			// Render rows
@@ -666,22 +647,32 @@ async function fetchApprovedVoters() {
 				const nameDisplay =
 					nameCountMap[nameKey] > 1
 						? `<span class="badge rounded-pill bg-warning text-dark" 
-                                 title="⚠ Warning: ${nameCountMap[nameKey]} approved voters share this name.">
-                             ${voter.full_name}
-                           </span>`
+                     title="⚠ Warning: ${nameCountMap[nameKey]} approved voters share this name.">
+                 ${voter.full_name}
+               </span>`
 						: voter.full_name;
 
+				// ✅ Create only one row, including Unapprove button
 				const row = document.createElement("tr");
 				row.innerHTML = `
-					<td>${voter.id}</td>
-					<td>${nameDisplay}</td>
-					<td>${voter.email}</td>
-					<td>${voter.metamask_address}</td>
-					<td>
-						<span id="${passwordId}" class="password-hidden">******</span>
-						<button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">Show</button>
-					</td>
-				`;
+        <td>${voter.id}</td>
+        <td>${nameDisplay}</td>
+        <td>${voter.email}</td>
+        <td>${voter.metamask_address}</td>
+        <td>
+            <span id="${passwordId}" class="password-hidden">******</span>
+            <button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">Show</button>
+        </td>
+        <td>
+            <button 
+                class="btn btn-sm btn-danger" 
+                onclick="window.unapproveVoter(${voter.id}, '${ballotId}', this)"
+            >
+                Unapprove
+            </button>
+        </td>
+    `;
+
 				tbody.appendChild(row);
 			});
 
