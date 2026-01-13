@@ -130,7 +130,6 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 	}
 });
 
-
 // ======================
 // Fetch Pending Voters
 // ======================
