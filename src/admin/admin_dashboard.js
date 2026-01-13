@@ -887,31 +887,20 @@ function openRegisterVoterModal() {
 document
 	.getElementById("addVoterButton")
 	.addEventListener("click", async function () {
-		// Get voter info
 		const fullName = document.getElementById("voterName").value.trim();
 		const email = document.getElementById("voterEmail").value.trim();
 		const metamaskAddress = document
 			.getElementById("voterAddress")
 			.value.trim();
-
-		// Get selected ballot ID from dropdown
 		const select = document.getElementById("voterBallotSelect");
 		const ballotId = select.value;
 
-		// Validate inputs
 		if (!fullName || !email || !metamaskAddress || !ballotId) {
 			alert("❌ All fields are required, including selecting a ballot.");
 			return;
 		}
 
 		try {
-			console.log("ADD VOTER CHECK:", {
-				full_name: fullName,
-				email,
-				metamask_address: metamaskAddress,
-				ballot_id: ballotId,
-			});
-
 			// Send data to backend
 			const response = await fetch(
 				"https://blockchain-voting-backend.onrender.com/addApprovedVoter",
@@ -929,13 +918,11 @@ document
 
 			const data = await response.json();
 
-			// Handle backend errors
 			if (!response.ok) {
 				alert(`❌ ${data.error}`);
 				return;
 			}
 
-			// Success
 			alert("✅ Voter added successfully!");
 
 			// Reset form and close modal
@@ -945,8 +932,8 @@ document
 			if (addVoterModal) addVoterModal.hide();
 			modalElement.removeAttribute("aria-hidden");
 
-			// Refresh the voter list
-			fetchApprovedVoters();
+			// Refresh the approved voter list
+			await fetchApprovedVoters();
 		} catch (error) {
 			console.error("❌ Error adding voter:", error);
 			alert("❌ Failed to add voter. Please try again.");
