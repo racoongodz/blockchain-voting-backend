@@ -441,7 +441,10 @@ async function fetchPendingVoters() {
 			const key = `${voter.ballot_id}||${voter.full_name}`;
 			const nameDisplay =
 				nameCountMap[key] > 1
-					? `<span class="badge rounded-pill bg-warning text-dark" title="${nameCountMap[key]} voters share this name">${voter.full_name}</span>`
+					? `<span class="badge rounded-pill bg-warning text-dark" 
+                             title="⚠ Warning: ${nameCountMap[key]} pending voters share this name. Check their ID photos.">
+                         ${voter.full_name}
+                       </span>`
 					: voter.full_name;
 
 			row.innerHTML = `
@@ -499,7 +502,6 @@ async function approveVoter(voterId) {
 		}
 
 		fetchPendingVoters(); // Refresh pending voters list
-		fetchApprovedVoters();
 	} catch (error) {
 		console.error("❌ Error approving voter:", error);
 		alert("Something went wrong! Please try again.");
@@ -537,7 +539,6 @@ window.openRegisterVoterModal = openRegisterVoterModal;
 document.addEventListener("DOMContentLoaded", fetchPendingVoters);
 
 // Load Approved Voters
-// ✅ Load Approved Voters
 async function fetchApprovedVoters() {
 	try {
 		const { ballotIds, ballotTitles } = await getMyBallots();
@@ -604,7 +605,7 @@ async function fetchApprovedVoters() {
 
 			// Container for voters table + add button
 			const votersContainer = document.createElement("div");
-			votersContainer.style.display = "none"; // 🔹 hidden by default
+			votersContainer.style.display = "none"; // hidden by default
 
 			// Add to Blockchain Button
 			const addButton = document.createElement("button");
@@ -630,12 +631,31 @@ async function fetchApprovedVoters() {
 			`;
 			const tbody = table.querySelector("tbody");
 
+			// Step 1: Build same-name map per ballot
+			const nameCountMap = {};
+			voters.forEach((voter) => {
+				const key = `${ballotId}||${voter.full_name}`;
+				nameCountMap[key] = (nameCountMap[key] || 0) + 1;
+			});
+
+			// Render rows
 			voters.forEach((voter, vIndex) => {
 				const passwordId = `password-${ballotId}-${vIndex}`;
+				const nameKey = `${ballotId}||${voter.full_name}`;
+
+				// Display name with badge if duplicates exist
+				const nameDisplay =
+					nameCountMap[nameKey] > 1
+						? `<span class="badge rounded-pill bg-warning text-dark" 
+                                 title="⚠ Warning: ${nameCountMap[nameKey]} approved voters share this name.">
+                             ${voter.full_name}
+                           </span>`
+						: voter.full_name;
+
 				const row = document.createElement("tr");
 				row.innerHTML = `
 					<td>${voter.id}</td>
-					<td>${voter.full_name}</td>
+					<td>${nameDisplay}</td>
 					<td>${voter.email}</td>
 					<td>${voter.metamask_address}</td>
 					<td>
@@ -645,6 +665,7 @@ async function fetchApprovedVoters() {
 				`;
 				tbody.appendChild(row);
 			});
+
 			votersContainer.appendChild(table);
 
 			// 🔹 Accordion Toggle functionality
