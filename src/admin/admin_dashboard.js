@@ -22,7 +22,7 @@ async function displayBallots() {
 		// Check if result is null, undefined, or empty
 		if (!result || !result.ballotIds || result.ballotIds.length === 0) {
 			ballotsList.innerHTML =
-				"<tr><td colspan='3' class='text-center'>No ballots found.</td></tr>";
+				"<tr><td colspan='4' class='text-center'>No ballots found.</td></tr>";
 			return;
 		}
 
@@ -31,20 +31,34 @@ async function displayBallots() {
 		for (let index = 0; index < ballotIds.length; index++) {
 			const id = ballotIds[index];
 			const title = ballotTitles[index];
+
+			// Fetch the voting_end date for this ballot from the backend
+			const votingEndRes = await fetch(
+				`https://blockchain-voting-backend.onrender.com/get-ballot/${id}`
+			);
+			const votingData = await votingEndRes.json();
+			const votingEnd = votingData?.voting_end
+				? new Date(votingData.voting_end)
+				: null;
+
+			// Determine if the voting period has ended
+			const now = new Date();
+			const isEnded = votingEnd && now >= votingEnd;
+
 			const row = document.createElement("tr");
 
-			// Check if the ballot is closed using the provided isBallotClosed function
-			const closed = await isBallotClosed(id);
-
 			row.innerHTML = `
-                <td>${id}</td> <!-- Display the actual ballot ID -->
+                <td>${id}</td> <!-- Ballot ID -->
                 <td>${title}</td>
+                <td class="${isEnded ? "bg-warning text-dark" : ""}">
+                    ${votingEnd ? votingEnd.toLocaleString() : "N/A"}
+                </td>
                 <td>
                     <button class="btn btn-primary" onclick="viewResults('${id}')">View Results</button>
                     <button class="btn btn-danger" onclick="handleEndVoting('${id}')"
-                        ${closed ? "disabled" : ""}>${
-				closed ? "Voting Ended" : "End Voting"
-			}</button>
+                        ${isEnded ? "disabled" : ""}>
+                        ${isEnded ? "Voting Ended" : "End Voting"}
+                    </button>
                 </td>
             `;
 
@@ -53,7 +67,7 @@ async function displayBallots() {
 	} catch (error) {
 		console.error("Error displaying ballots:", error);
 		ballotsList.innerHTML =
-			"<tr><td colspan='3' class='text-center text-danger'>Error loading ballots.</td></tr>";
+			"<tr><td colspan='4' class='text-center text-danger'>Error loading ballots.</td></tr>";
 	}
 }
 

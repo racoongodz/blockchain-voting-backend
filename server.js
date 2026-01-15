@@ -525,6 +525,33 @@ app.post("/save-ballot", async (req, res) => {
 });
 
 // ======================
+// Get Ballot Metadata by ID
+// ======================
+app.get("/get-ballot/:id", async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		if (!id) return res.status(400).json({ error: "Ballot ID is required." });
+
+		const { rows } = await db.query(
+			`SELECT ballot_id, title, registration_start, registration_end, voting_end
+             FROM ballots
+             WHERE ballot_id = $1`,
+			[id]
+		);
+
+		if (rows.length === 0) {
+			return res.status(404).json({ error: "Ballot not found." });
+		}
+
+		res.json(rows[0]);
+	} catch (err) {
+		console.error("Error fetching ballot:", err);
+		res.status(500).json({ error: "Failed to fetch ballot." });
+	}
+});
+
+// ======================
 // Start Server
 // ======================
 const PORT = process.env.PORT || 3000;
