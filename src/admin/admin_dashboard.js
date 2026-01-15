@@ -12,6 +12,88 @@ import {
 } from "../blockchain.js";
 window.fetchApprovedVoters = fetchApprovedVoters;
 
+async function displayBallots() {
+	const ballotsList = document.getElementById("ballotsList");
+	ballotsList.innerHTML = ""; // Clear previous list
+
+	try {
+		const result = await getMyBallots();
+
+		if (!result || !result.ballotIds || result.ballotIds.length === 0) {
+			ballotsList.innerHTML =
+				"<tr><td colspan='4' class='text-center'>No ballots found.</td></tr>";
+			return;
+		}
+
+		const { ballotIds, ballotTitles } = result;
+
+		for (let index = 0; index < ballotIds.length; index++) {
+			const id = ballotIds[index];
+			const title = ballotTitles[index];
+
+			// Fetch ballot metadata including voting_end
+			const votingEndRes = await fetch(
+				`https://blockchain-voting-backend.onrender.com/get-ballot/${id}`
+			);
+			const votingData = await votingEndRes.json();
+			const votingEnd = votingData?.voting_end
+				? new Date(votingData.voting_end)
+				: null;
+
+			// Check if ballot is closed on-chain
+			const isEnded = await isBallotClosed(id);
+
+			// Determine badge color
+			let badgeClass = "bg-secondary text-white"; // default
+			let tooltipText = "";
+
+			if (votingEnd) {
+				const now = new Date();
+				const diffMs = votingEnd - now;
+
+				if (isEnded) {
+					badgeClass = "bg-success text-white"; // green if ended
+					tooltipText = "Voting ended";
+				} else if (diffMs <= 0) {
+					badgeClass = "bg-danger text-white"; // red if past end date but not ended on-chain
+					tooltipText = "Voting period passed";
+				} else if (diffMs <= 5 * 60 * 60 * 1000) {
+					badgeClass = "bg-warning text-dark"; // yellow if <5 hours left
+					tooltipText = getCountdownTooltip(votingEnd);
+				} else {
+					badgeClass = "bg-primary text-white"; // normal future date
+					tooltipText = getCountdownTooltip(votingEnd);
+				}
+			} else {
+				tooltipText = "No end date set";
+			}
+
+			const row = document.createElement("tr");
+			row.innerHTML = `
+                <td>${id}</td>
+                <td>${title}</td>
+                <td>
+                    <span class="badge rounded-pill ${badgeClass}" title="${tooltipText}">
+                        ${votingEnd ? formatDateShortMonth(votingEnd) : "N/A"}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-primary" onclick="viewResults('${id}')">View Results</button>
+                    <button class="btn btn-danger" onclick="handleEndVoting('${id}')"
+                        ${isEnded ? "disabled" : ""}>
+                        ${isEnded ? "Voting Ended" : "End Voting"}
+                    </button>
+                </td>
+            `;
+			ballotsList.appendChild(row);
+		}
+	} catch (error) {
+		console.error("Error displaying ballots:", error);
+		ballotsList.innerHTML =
+			"<tr><td colspan='4' class='text-center text-danger'>Error loading ballots.</td></tr>";
+	}
+}
+
 // Format date as "Mon DD, YYYY HH:MM"
 function formatDateShortMonth(date) {
 	const options = {
@@ -33,93 +115,6 @@ function getCountdownTooltip(votingEnd) {
 	const diffHrs = Math.floor(diffMs / 1000 / 60 / 60);
 	const diffMins = Math.floor((diffMs / 1000 / 60) % 60);
 	return `Ends in ${diffHrs}h ${diffMins}m`;
-}
-
-async function displayBallots() {
-	const ballotsList = document.getElementById("ballotsList");
-	ballotsList.innerHTML = ""; // Clear previous list
-
-	try {
-		const result = await getMyBallots();
-
-		// Check if result is null, undefined, or empty
-		if (!result || !result.ballotIds || result.ballotIds.length === 0) {
-			ballotsList.innerHTML =
-				"<tr><td colspan='4' class='text-center'>No ballots found.</td></tr>";
-			return;
-		}
-
-		const { ballotIds, ballotTitles } = result;
-
-		for (let index = 0; index < ballotIds.length; index++) {
-			const id = ballotIds[index];
-			const title = ballotTitles[index];
-
-			// ✅ Check if ballot is closed on blockchain
-			const isClosed = await isBallotClosed(id);
-
-			// ✅ Fetch backend voting_end date
-			const votingEndRes = await fetch(
-				`https://blockchain-voting-backend.onrender.com/get-ballot/${id}`
-			);
-			const votingData = await votingEndRes.json();
-			const votingEnd = votingData?.voting_end
-				? new Date(votingData.voting_end)
-				: null;
-
-			// Determine badge color
-			const now = new Date();
-			let badgeClass = "";
-			let tooltipText = "";
-
-			if (isClosed) {
-				badgeClass = "bg-success"; // Green
-			} else if (votingEnd) {
-				const diffHours = (votingEnd - now) / (1000 * 60 * 60);
-				if (diffHours <= 5 && diffHours > 0) {
-					badgeClass = "bg-warning"; // Yellow
-					tooltipText = "Voting ending soon!";
-				} else if (diffHours <= 0) {
-					badgeClass = "bg-danger"; // Red
-					tooltipText = "Voting period has passed!";
-				}
-			}
-
-			const row = document.createElement("tr");
-
-			row.innerHTML = `
-                <td>${id}</td>
-                <td>${title}</td>
-                <td>
-                    <span class="badge rounded-pill ${badgeClass}" title="${tooltipText}">
-                        ${
-													votingEnd
-														? votingEnd.toLocaleString("en-US", {
-																month: "short",
-																day: "numeric",
-																hour: "2-digit",
-																minute: "2-digit",
-														  })
-														: "N/A"
-												}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn btn-primary" onclick="viewResults('${id}')">View Results</button>
-                    <button class="btn btn-danger" onclick="handleEndVoting('${id}')"
-                        ${isClosed ? "disabled" : ""}>
-                        ${isClosed ? "Voting Ended" : "End Voting"}
-                    </button>
-                </td>
-            `;
-
-			ballotsList.appendChild(row);
-		}
-	} catch (error) {
-		console.error("Error displaying ballots:", error);
-		ballotsList.innerHTML =
-			"<tr><td colspan='4' class='text-center text-danger'>Error loading ballots.</td></tr>";
-	}
 }
 
 // Call the function when the page loads
