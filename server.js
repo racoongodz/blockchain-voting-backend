@@ -567,26 +567,26 @@ app.get("/get-ballot/:id", async (req, res) => {
 	}
 });
 
-const { sendVoterPassword } = require("./emailService");
+// const { sendVoterPassword } = require("./emailService");
 
-app.post("/send-voter-passwords", async (req, res) => {
-	const { voters } = req.body; // array of { email, password }
+// app.post("/send-voter-passwords", async (req, res) => {
+// 	const { voters } = req.body; // array of { email, password }
 
-	try {
-		// Create an array of Promises for sending emails
-		const emailPromises = voters.map((voter) =>
-			sendVoterPassword(voter.email, voter.password)
-		);
+// 	try {
+// 		// Create an array of Promises for sending emails
+// 		const emailPromises = voters.map((voter) =>
+// 			sendVoterPassword(voter.email, voter.password)
+// 		);
 
-		// Run all email sends in parallel
-		await Promise.all(emailPromises);
+// 		// Run all email sends in parallel
+// 		await Promise.all(emailPromises);
 
-		res.json({ message: "All voter emails sent successfully" });
-	} catch (err) {
-		console.error(err);
-		res.status(500).json({ message: "Failed to send voter emails" });
-	}
-});
+// 		res.json({ message: "All voter emails sent successfully" });
+// 	} catch (err) {
+// 		console.error(err);
+// 		res.status(500).json({ message: "Failed to send voter emails" });
+// 	}
+// });
 
 // ======================
 // Start Server

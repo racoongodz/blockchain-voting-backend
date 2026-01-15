@@ -990,24 +990,24 @@ async function registerApprovedVoters(ballotId) {
 				}
 			);
 
-			// 2️⃣ Send emails via backend
-			await fetch(
-				"https://blockchain-voting-backend.onrender.com/send-voter-passwords",
-				{
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						voters: unregisteredVoters.map((v) => ({
-							email: v.email,
-							password: v.voter_password,
-						})),
-					}),
-				}
-			);
+			// // 2️⃣ Send emails via backend
+			// await fetch(
+			// 	"https://blockchain-voting-backend.onrender.com/send-voter-passwords",
+			// 	{
+			// 		method: "POST",
+			// 		headers: { "Content-Type": "application/json" },
+			// 		body: JSON.stringify({
+			// 			voters: unregisteredVoters.map((v) => ({
+			// 				email: v.email,
+			// 				password: v.voter_password,
+			// 			})),
+			// 		}),
+			// 	}
+			// );
 
-			alert(
-				`📧 Password emails sent to ${unregisteredVoters.length} voter(s).`
-			);
+			// alert(
+			// 	`📧 Password emails sent to ${unregisteredVoters.length} voter(s).`
+			// );
 		} else {
 			alert("⚠️ Transaction failed. Voters were not registered on-chain.");
 		}
