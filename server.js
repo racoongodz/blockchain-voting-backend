@@ -38,6 +38,30 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 		}
 
 		// ======================
+		// STEP 0: Check Registration Period
+		// ======================
+		const ballotRes = await db.query(
+			"SELECT registration_start, registration_end FROM ballots WHERE ballot_id = $1",
+			[ballot_id]
+		);
+
+		if (ballotRes.rows.length === 0) {
+			return res.status(400).json({ error: "Ballot not found." });
+		}
+
+		const { registration_start, registration_end } = ballotRes.rows[0];
+		const now = new Date();
+
+		if (
+			now < new Date(registration_start) ||
+			now > new Date(registration_end)
+		) {
+			return res.status(400).json({
+				error: "Voter registration for this ballot is currently closed.",
+			});
+		}
+
+		// ======================
 		// STEP 1: Duplicate Checks
 		// ======================
 
@@ -78,7 +102,7 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 		}
 
 		// ======================
-		// Upload photo to Supabase Storage
+		// STEP 2: Upload photo to Supabase Storage
 		// ======================
 		const filePath = `voter-photos/${Date.now()}-${file.originalname}`;
 		const { error: uploadError } = await supabase.storage
@@ -102,7 +126,7 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 		const id_photo_url = publicUrlData.publicUrl;
 
 		// ======================
-		// Insert voter into pending_voters
+		// STEP 3: Insert voter into pending_voters
 		// ======================
 		const sql = `
 			INSERT INTO pending_voters 
