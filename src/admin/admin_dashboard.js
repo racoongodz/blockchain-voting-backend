@@ -148,18 +148,26 @@ document
 	.getElementById("submitBallot")
 	.addEventListener("click", async function () {
 		const title = document.getElementById("ballotTitle").value.trim();
-		const registrationStart =
+		const registrationStartLocal =
 			document.getElementById("registrationStart").value;
-		const registrationEnd = document.getElementById("registrationEnd").value;
-		const votingEnd = document.getElementById("votingEnd").value;
+		const registrationEndLocal =
+			document.getElementById("registrationEnd").value;
+		const votingEndLocal = document.getElementById("votingEnd").value;
 		const positions = [];
 		const candidates = [];
 
 		// Validate title and registration period
-		if (!title || !registrationStart || !registrationEnd) {
+		if (!title || !registrationStartLocal || !registrationEndLocal) {
 			alert("❌ Please enter a ballot title and set the registration period.");
 			return;
 		}
+
+		// Convert local dates to UTC ISO strings
+		const registrationStartUTC = new Date(registrationStartLocal).toISOString();
+		const registrationEndUTC = new Date(registrationEndLocal).toISOString();
+		const votingEndUTC = votingEndLocal
+			? new Date(votingEndLocal).toISOString()
+			: null;
 
 		// Get Positions & Candidates
 		document.querySelectorAll(".position-group").forEach((group) => {
@@ -196,21 +204,21 @@ document
 			title,
 			positions,
 			candidates,
-			registrationStart,
-			registrationEnd,
-			votingEnd,
+			registrationStartUTC,
+			registrationEndUTC,
+			votingEndUTC,
 		});
 
 		try {
-			// ✅ Call refactored createBallot that returns success flag
+			// ✅ Call createBallot with UTC dates
 			const result = await createBallot(
 				ballotId,
 				title,
 				positions,
 				candidates,
-				registrationStart,
-				registrationEnd,
-				votingEnd
+				registrationStartUTC,
+				registrationEndUTC,
+				votingEndUTC
 			);
 
 			if (result.success) {

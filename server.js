@@ -38,7 +38,7 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 		}
 
 		// ======================
-		// STEP 0: Check Registration Period
+		// STEP 0: Check Registration Period (UTC)
 		// ======================
 		const ballotRes = await db.query(
 			"SELECT registration_start, registration_end FROM ballots WHERE ballot_id = $1",
@@ -50,12 +50,13 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 		}
 
 		const { registration_start, registration_end } = ballotRes.rows[0];
-		const now = new Date();
 
-		if (
-			now < new Date(registration_start) ||
-			now > new Date(registration_end)
-		) {
+		// Convert both DB and server time to UTC
+		const nowUTC = new Date(new Date().toISOString()); // current UTC time
+		const regStartUTC = new Date(registration_start);
+		const regEndUTC = new Date(registration_end);
+
+		if (nowUTC < regStartUTC || nowUTC > regEndUTC) {
 			return res.status(400).json({
 				error: "Voter registration for this ballot is currently closed.",
 			});
@@ -68,12 +69,12 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 		// Check duplicate MetaMask (pending + approved)
 		const walletCheck = await db.query(
 			`
-			SELECT 1 FROM pending_voters 
-			WHERE ballot_id = $1 AND metamask_address = $2
-			UNION
-			SELECT 1 FROM approved_voters 
-			WHERE ballot_id = $1 AND metamask_address = $2
-			`,
+      SELECT 1 FROM pending_voters 
+      WHERE ballot_id = $1 AND metamask_address = $2
+      UNION
+      SELECT 1 FROM approved_voters 
+      WHERE ballot_id = $1 AND metamask_address = $2
+      `,
 			[ballot_id, metamask_address]
 		);
 
@@ -86,12 +87,12 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 		// Check duplicate email (pending + approved)
 		const emailCheck = await db.query(
 			`
-			SELECT 1 FROM pending_voters 
-			WHERE ballot_id = $1 AND email = $2
-			UNION
-			SELECT 1 FROM approved_voters 
-			WHERE ballot_id = $1 AND email = $2
-			`,
+      SELECT 1 FROM pending_voters 
+      WHERE ballot_id = $1 AND email = $2
+      UNION
+      SELECT 1 FROM approved_voters 
+      WHERE ballot_id = $1 AND email = $2
+      `,
 			[ballot_id, email]
 		);
 
@@ -129,11 +130,11 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 		// STEP 3: Insert voter into pending_voters
 		// ======================
 		const sql = `
-			INSERT INTO pending_voters 
-			(ballot_id, full_name, email, metamask_address, id_photo)
-			VALUES ($1, $2, $3, $4, $5)
-			RETURNING *
-		`;
+      INSERT INTO pending_voters 
+      (ballot_id, full_name, email, metamask_address, id_photo)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `;
 
 		const { rows } = await db.query(sql, [
 			ballot_id,
