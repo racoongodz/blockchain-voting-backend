@@ -619,17 +619,51 @@ export async function loginAdmin(username, password) {
 /**
  * Create a Ballot
  */
-export async function createBallot(ballotId, title, positions, candidates) {
+export async function createBallot(
+	ballotId,
+	title,
+	positions,
+	candidates,
+	registrationStart,
+	registrationEnd,
+	votingEnd
+) {
 	const account = await connectWallet();
 	if (!account) return;
 
 	try {
+		// 1️⃣ Create ballot on blockchain
 		await contract.methods
 			.createBallot(ballotId, title, positions, candidates)
 			.send({ from: account });
-		alert("Ballot created successfully!");
+
+		alert("✅ Ballot created successfully on blockchain!");
+
+		// 2️⃣ Save metadata to backend
+		const response = await fetch(
+			"https://blockchain-voting-backend.onrender.com/save-ballot",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					ballot_id: ballotId,
+					title,
+					admin_address: account,
+					registration_start: registrationStart,
+					registration_end: registrationEnd,
+					voting_end: votingEnd || null,
+				}),
+			}
+		);
+
+		const data = await response.json();
+		if (!response.ok)
+			throw new Error(data.error || "Failed to save ballot metadata.");
+
+		alert("✅ Ballot metadata saved successfully!");
 	} catch (error) {
-		console.error("Error creating ballot:", error);
+		console.error("❌ Error creating ballot:", error);
+		alert("❌ Failed to create ballot. Check console for details.");
 	}
 }
 

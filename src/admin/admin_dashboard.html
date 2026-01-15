@@ -374,6 +374,7 @@
 					</div>
 					<div class="modal-body">
 						<form id="ballotForm">
+							<!-- Ballot Title -->
 							<div class="mb-3">
 								<label class="form-label">Ballot Title</label>
 								<input
@@ -383,6 +384,42 @@
 									required
 								/>
 							</div>
+
+							<!-- Registration Period -->
+							<div class="mb-3">
+								<label class="form-label">Registration Start</label>
+								<input
+									type="datetime-local"
+									id="registrationStart"
+									class="form-control"
+									required
+								/>
+							</div>
+
+							<div class="mb-3">
+								<label class="form-label">Registration End</label>
+								<input
+									type="datetime-local"
+									id="registrationEnd"
+									class="form-control"
+									required
+								/>
+							</div>
+
+							<!-- Voting End Reminder -->
+							<div class="mb-3">
+								<label class="form-label">Voting End (Reminder Only)</label>
+								<input
+									type="datetime-local"
+									id="votingEnd"
+									class="form-control"
+								/>
+								<small class="text-muted">
+									Reminder only. Does not automatically close voting.
+								</small>
+							</div>
+
+							<!-- Positions Container -->
 							<div id="positionsContainer"></div>
 							<button
 								type="button"

@@ -436,6 +436,70 @@ app.get("/ping", (req, res) => {
 });
 
 // ======================
+// Save Ballot Metadata (After Blockchain Creation)
+// ======================
+app.post("/save-ballot", async (req, res) => {
+	const {
+		ballot_id,
+		title,
+		admin_address,
+		registration_start,
+		registration_end,
+		voting_end,
+	} = req.body;
+
+	// Basic validation
+	if (
+		!ballot_id ||
+		!title ||
+		!admin_address ||
+		!registration_start ||
+		!registration_end
+	) {
+		return res.status(400).json({ error: "Missing required ballot fields." });
+	}
+
+	try {
+		// Prevent duplicate save
+		const existing = await db.query(
+			"SELECT ballot_id FROM ballots WHERE ballot_id = $1",
+			[ballot_id]
+		);
+
+		if (existing.rows.length > 0) {
+			return res.status(400).json({ error: "Ballot already saved." });
+		}
+
+		await db.query(
+			`
+			INSERT INTO ballots (
+				ballot_id,
+				title,
+				admin_address,
+				registration_start,
+				registration_end,
+				voting_end
+			)
+			VALUES ($1,$2,$3,$4,$5,$6)
+			`,
+			[
+				ballot_id,
+				title,
+				admin_address,
+				registration_start,
+				registration_end,
+				voting_end || null,
+			]
+		);
+
+		res.json({ success: true, message: "Ballot saved successfully." });
+	} catch (err) {
+		console.error("❌ Error saving ballot:", err);
+		res.status(500).json({ error: "Failed to save ballot." });
+	}
+});
+
+// ======================
 // Start Server
 // ======================
 const PORT = process.env.PORT || 3000;

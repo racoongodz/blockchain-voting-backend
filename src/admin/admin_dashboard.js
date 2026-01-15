@@ -148,11 +148,16 @@ document
 	.getElementById("submitBallot")
 	.addEventListener("click", async function () {
 		const title = document.getElementById("ballotTitle").value.trim();
+		const registrationStart =
+			document.getElementById("registrationStart").value;
+		const registrationEnd = document.getElementById("registrationEnd").value;
+		const votingEnd = document.getElementById("votingEnd").value;
 		const positions = [];
 		const candidates = [];
 
-		if (!title) {
-			alert("Please enter a ballot title.");
+		// Validate title and registration period
+		if (!title || !registrationStart || !registrationEnd) {
+			alert("❌ Please enter a ballot title and set the registration period.");
 			return;
 		}
 
@@ -177,7 +182,7 @@ document
 		});
 
 		if (positions.length === 0) {
-			alert("Please add at least one position with candidates.");
+			alert("❌ Please add at least one position with candidates.");
 			return;
 		}
 
@@ -191,21 +196,36 @@ document
 			title,
 			positions,
 			candidates,
+			registrationStart,
+			registrationEnd,
+			votingEnd,
 		});
 
 		try {
-			await createBallot(ballotId, title, positions, candidates);
+			// ✅ Pass new dates to createBallot
+			await createBallot(
+				ballotId,
+				title,
+				positions,
+				candidates,
+				registrationStart,
+				registrationEnd,
+				votingEnd
+			);
+
+			// Reset form & modal
 			document.getElementById("ballotForm").reset();
 			document.querySelector(".btn-close").click(); // Close Modal
 			document.getElementById("positionsContainer").innerHTML = ""; // Clear Positions
 			addPosition(); // Ensure at least one position exists
 
+			// Reload page after short delay
 			setTimeout(() => {
 				location.reload();
 			}, 1000);
 		} catch (error) {
 			console.error("Error creating ballot:", error);
-			alert("Failed to create ballot. Check console for details.");
+			alert("❌ Failed to create ballot. Check console for details.");
 		}
 	});
 
@@ -947,7 +967,7 @@ document
 			modalElement.removeAttribute("aria-hidden");
 
 			// Refresh the approved voter list
-			await fetchApprovedVoters();
+			//await fetchApprovedVoters();
 		} catch (error) {
 			console.error("❌ Error adding voter:", error);
 			alert("❌ Failed to add voter. Please try again.");
