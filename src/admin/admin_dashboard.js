@@ -12,6 +12,8 @@ import {
 } from "../blockchain.js";
 window.fetchApprovedVoters = fetchApprovedVoters;
 
+let hideEnded = false; // global flag for toggle button
+
 async function displayBallots() {
 	const ballotsList = document.getElementById("ballotsList");
 	ballotsList.innerHTML = ""; // Clear previous list
@@ -42,6 +44,9 @@ async function displayBallots() {
 
 			// Check if ballot is closed on-chain
 			const isEnded = await isBallotClosed(id);
+
+			// Skip ballot if hideEnded is true and the ballot has ended
+			if (hideEnded && isEnded) continue;
 
 			// Determine badge color
 			let badgeClass = "bg-secondary text-white"; // default
@@ -92,6 +97,16 @@ async function displayBallots() {
 		ballotsList.innerHTML =
 			"<tr><td colspan='4' class='text-center text-danger'>Error loading ballots.</td></tr>";
 	}
+}
+
+// Toggle button setup
+const toggleBtn = document.getElementById("toggleEndedBtn");
+if (toggleBtn) {
+	toggleBtn.addEventListener("click", () => {
+		hideEnded = !hideEnded;
+		toggleBtn.textContent = hideEnded ? "Show Ended" : "Hide Ended";
+		displayBallots();
+	});
 }
 
 // Format date as "Mon DD, YYYY HH:MM"
