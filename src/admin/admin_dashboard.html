@@ -589,10 +589,10 @@
 			tabindex="-1"
 			aria-hidden="true"
 		>
-			<div class="modal-dialog">
+			<div class="modal-dialog modal-lg modal-dialog-scrollable">
 				<div class="modal-content">
 					<div class="modal-header">
-						<h5 class="modal-title">View Ballot Report</h5>
+						<h5 class="modal-title">Ballot Report</h5>
 						<button
 							type="button"
 							class="btn-close"
@@ -600,12 +600,20 @@
 							aria-label="Close"
 						></button>
 					</div>
+
 					<div class="modal-body">
-						<label class="form-label">Select Ballot</label>
-						<select id="ballotIdSelect" class="form-control">
-							<option value="">Loading ballots...</option>
-						</select>
+						<!-- Ballot selector -->
+						<div class="mb-3">
+							<label class="form-label">Select Ballot</label>
+							<select id="ballotIdSelect" class="form-control">
+								<option value="">Loading ballots...</option>
+							</select>
+						</div>
+
+						<!-- Ballot details will be injected here -->
+						<div id="ballotDetailsContent" class="mt-3"></div>
 					</div>
+
 					<div class="modal-footer">
 						<button
 							type="button"
@@ -614,12 +622,21 @@
 						>
 							Close
 						</button>
+
 						<button
 							type="button"
 							class="btn btn-primary"
 							id="fetchBallotDetails"
 						>
 							View Report
+						</button>
+
+						<button
+							type="button"
+							class="btn btn-success"
+							id="downloadBallotPdf"
+						>
+							Download PDF
 						</button>
 					</div>
 				</div>
