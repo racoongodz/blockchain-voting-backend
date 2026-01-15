@@ -410,7 +410,7 @@ document.addEventListener("DOMContentLoaded", function () {
 			<hr>
 
 			<h6>Important Dates</h6>
-			<<p><strong>Registration Start:</strong> ${formatDateTime(
+			<p><strong>Registration Start:</strong> ${formatDateTime(
 				details.registration_start
 			)}</p>
 <p><strong>Registration End:</strong> ${formatDateTime(
@@ -1505,6 +1505,19 @@ document.addEventListener("DOMContentLoaded", function () {
 			return;
 		}
 
+		function formatDateTime(date) {
+			if (!date) return "N/A";
+
+			return new Date(date).toLocaleString(undefined, {
+				year: "numeric",
+				month: "long",
+				day: "numeric",
+				hour: "numeric",
+				minute: "2-digit",
+				hour12: true,
+			});
+		}
+
 		// Fetch ballot metadata including voting_end
 		let ballotEndDate = "";
 		try {
@@ -1515,9 +1528,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 			const data = await response.json();
 			// Use voting_end as the End Date
-			ballotEndDate = data.voting_end
-				? new Date(data.voting_end).toLocaleDateString()
-				: "N/A";
+			ballotEndDate = data.voting_end ? formatDateTime(data.voting_end) : "N/A";
 		} catch (error) {
 			console.error("Error fetching ballot end date:", error);
 			ballotEndDate = "N/A";
