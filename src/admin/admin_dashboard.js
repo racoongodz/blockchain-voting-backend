@@ -215,19 +215,15 @@ document
 
 			if (result.success) {
 				alert("✅ Ballot created and saved successfully!");
-
-				// Reset form & modal
 				document.getElementById("ballotForm").reset();
-				document.querySelector(".btn-close").click(); // Close Modal
-				document.getElementById("positionsContainer").innerHTML = ""; // Clear Positions
-				addPosition(); // Ensure at least one position exists
-
-				// Reload page after short delay
-				setTimeout(() => {
-					location.reload();
-				}, 1000);
+				document.querySelector(".btn-close").click();
+				document.getElementById("positionsContainer").innerHTML = "";
+				addPosition();
+				setTimeout(() => location.reload(), 1000);
 			} else {
-				alert("❌ Failed to create ballot. Check console for details.");
+				alert(
+					"❌ Failed to create ballot: " + (result.error || "Unknown error")
+				);
 			}
 		} catch (error) {
 			console.error("Error creating ballot:", error);
@@ -973,7 +969,7 @@ document
 			modalElement.removeAttribute("aria-hidden");
 
 			// Refresh the approved voter list
-			//await fetchApprovedVoters();
+			await fetchApprovedVoters();
 		} catch (error) {
 			console.error("❌ Error adding voter:", error);
 			alert("❌ Failed to add voter. Please try again.");

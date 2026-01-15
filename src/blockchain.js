@@ -655,13 +655,15 @@ export async function createBallot(
 		);
 
 		const data = await response.json();
-		if (!response.ok)
-			throw new Error(data.error || "Failed to save ballot metadata.");
+		if (!response.ok) {
+			console.error("Backend error:", data.error);
+			return { success: false, error: data.error || "Failed to save ballot" };
+		}
 
-		return { success: true }; // ✅ Both steps succeeded
+		return { success: true, data };
 	} catch (error) {
 		console.error("❌ Error creating ballot:", error);
-		return { success: false, error };
+		return { success: false, error: error.message };
 	}
 }
 
