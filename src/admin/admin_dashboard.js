@@ -965,20 +965,20 @@ async function registerApprovedVoters(ballotId) {
 			web3Instance.utils.keccak256(v.voter_password)
 		);
 
-		// Call blockchain.js function
+		// Call blockchain function to register voters
 		const receipt = await registerMultipleVoters(
 			voterAddresses,
 			ballotId,
 			hashedPasswords
 		);
 
-		// Only show success if receipt.status === true
+		// Only proceed if blockchain transaction succeeded
 		if (receipt && receipt.status) {
 			alert(
 				`✅ Successfully registered ${unregisteredVoters.length} voter(s) for ballot ${ballotId}.`
 			);
 
-			// Mark them as on-chain in backend
+			// 1️⃣ Mark them as on-chain in backend
 			await fetch(
 				"https://blockchain-voting-backend.onrender.com/mark-onchain",
 				{
@@ -988,6 +988,25 @@ async function registerApprovedVoters(ballotId) {
 						voterIds: unregisteredVoters.map((v) => v.id),
 					}),
 				}
+			);
+
+			// 2️⃣ Send emails via backend
+			await fetch(
+				"https://blockchain-voting-backend.onrender.com/send-voter-passwords",
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						voters: unregisteredVoters.map((v) => ({
+							email: v.email,
+							password: v.voter_password,
+						})),
+					}),
+				}
+			);
+
+			alert(
+				`📧 Password emails sent to ${unregisteredVoters.length} voter(s).`
 			);
 		} else {
 			alert("⚠️ Transaction failed. Voters were not registered on-chain.");
