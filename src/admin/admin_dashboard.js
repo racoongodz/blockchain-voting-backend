@@ -410,13 +410,14 @@ document.addEventListener("DOMContentLoaded", function () {
 			<hr>
 
 			<h6>Important Dates</h6>
-			<p><strong>Registration Start:</strong> ${formatDate(
+			<<p><strong>Registration Start:</strong> ${formatDateTime(
 				details.registration_start
 			)}</p>
-			<p><strong>Registration End:</strong> ${formatDate(
-				details.registration_end
-			)}</p>
-			<p><strong>Voting End:</strong> ${formatDate(details.voting_end)}</p>
+<p><strong>Registration End:</strong> ${formatDateTime(
+			details.registration_end
+		)}</p>
+<p><strong>Voting End:</strong> ${formatDateTime(details.voting_end)}</p>
+
 
 			<hr>
 
@@ -443,8 +444,17 @@ document.addEventListener("DOMContentLoaded", function () {
 	// ======================
 	// Helpers
 	// ======================
-	function formatDate(date) {
-		return date ? new Date(date).toLocaleDateString() : "N/A";
+	function formatDateTime(date) {
+		if (!date) return "N/A";
+
+		return new Date(date).toLocaleString(undefined, {
+			year: "numeric",
+			month: "long",
+			day: "numeric",
+			hour: "numeric",
+			minute: "2-digit",
+			hour12: true,
+		});
 	}
 
 	async function getBallotMetadata(ballotId) {
@@ -479,13 +489,14 @@ document.addEventListener("DOMContentLoaded", function () {
 					<p><strong>Ballot ID:</strong> ${details.ballotId}</p>
 					<p><strong>Ballot Title:</strong> ${details.title}</p>
 
-					<p><strong>Registration Start:</strong> ${formatDate(
+					<p><strong>Registration Start:</strong> ${formatDateTime(
 						details.registration_start
 					)}</p>
-					<p><strong>Registration End:</strong> ${formatDate(
-						details.registration_end
-					)}</p>
-					<p><strong>Voting End:</strong> ${formatDate(details.voting_end)}</p>
+<p><strong>Registration End:</strong> ${formatDateTime(
+			details.registration_end
+		)}</p>
+<p><strong>Voting End:</strong> ${formatDateTime(details.voting_end)}</p>
+
 					<p><strong>Download Date:</strong> ${currentDate}</p>
 
 					<h4 style="margin-top:20px; text-align:center;">Positions & Candidates</h4>
