@@ -73,14 +73,14 @@ async function displayBallots() {
 			} else {
 				const diffMs = votingEnd - now;
 				if (diffMs <= 0) {
-					bgColor = "#198754"; // green
+					bgColor = "#198754"; // green → voting ended
 					tooltip = "Voting period ended";
 				} else if (diffMs <= 5 * 60 * 60 * 1000) {
 					// less than 5 hours
-					bgColor = "#ffc107"; // yellow
+					bgColor = "#ffc107"; // yellow → warning
 					tooltip = getCountdownTooltip(votingEnd);
 				} else {
-					bgColor = "#dc3545"; // red
+					bgColor = "#dc3545"; // red → active and not near end
 					tooltip = getCountdownTooltip(votingEnd);
 				}
 			}
@@ -91,7 +91,7 @@ async function displayBallots() {
 				<td>${id}</td>
 				<td>${title}</td>
 				<td>
-					<span class="badge" style="background-color: ${bgColor}; color: black;" title="${tooltip}">
+					<span class="badge rounded-pill" style="background-color: ${bgColor}; color: black;" title="${tooltip}">
 						${votingEnd ? formatDateShortMonth(votingEnd) : "N/A"}
 					</span>
 				</td>
