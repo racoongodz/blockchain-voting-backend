@@ -531,7 +531,9 @@ app.get("/get-ballot/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
 
-		if (!id) return res.status(400).json({ error: "Ballot ID is required." });
+		if (!id) {
+			return res.status(400).json({ error: "Ballot ID is required." });
+		}
 
 		const { rows } = await db.query(
 			`SELECT ballot_id, title, registration_start, registration_end, voting_end
@@ -544,7 +546,21 @@ app.get("/get-ballot/:id", async (req, res) => {
 			return res.status(404).json({ error: "Ballot not found." });
 		}
 
-		res.json(rows[0]);
+		// Convert dates to ISO strings for consistent JS parsing
+		const ballot = rows[0];
+		res.json({
+			ballot_id: ballot.ballot_id,
+			title: ballot.title,
+			registration_start: ballot.registration_start
+				? new Date(ballot.registration_start).toISOString()
+				: null,
+			registration_end: ballot.registration_end
+				? new Date(ballot.registration_end).toISOString()
+				: null,
+			voting_end: ballot.voting_end
+				? new Date(ballot.voting_end).toISOString()
+				: null,
+		});
 	} catch (err) {
 		console.error("Error fetching ballot:", err);
 		res.status(500).json({ error: "Failed to fetch ballot." });

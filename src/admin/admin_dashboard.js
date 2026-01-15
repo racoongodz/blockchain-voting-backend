@@ -42,6 +42,7 @@ async function displayBallots() {
 	try {
 		const result = await getMyBallots();
 
+		// Check if result is null, undefined, or empty
 		if (!result || !result.ballotIds || result.ballotIds.length === 0) {
 			ballotsList.innerHTML =
 				"<tr><td colspan='4' class='text-center'>No ballots found.</td></tr>";
@@ -54,7 +55,10 @@ async function displayBallots() {
 			const id = ballotIds[index];
 			const title = ballotTitles[index];
 
-			// Fetch voting_end date for this ballot from backend
+			// ✅ Check if ballot is closed on blockchain
+			const isClosed = await isBallotClosed(id);
+
+			// ✅ Fetch backend voting_end date
 			const votingEndRes = await fetch(
 				`https://blockchain-voting-backend.onrender.com/get-ballot/${id}`
 			);
@@ -63,46 +67,51 @@ async function displayBallots() {
 				? new Date(votingData.voting_end)
 				: null;
 
+			// Determine badge color
 			const now = new Date();
-			let bgColor = "";
-			let tooltip = "";
+			let badgeClass = "";
+			let tooltipText = "";
 
-			if (!votingEnd) {
-				bgColor = "#6c757d"; // gray if N/A
-				tooltip = "No end date set";
-			} else {
-				const diffMs = votingEnd - now;
-				if (diffMs <= 0) {
-					bgColor = "#198754"; // green → voting ended
-					tooltip = "Voting period ended";
-				} else if (diffMs <= 5 * 60 * 60 * 1000) {
-					// less than 5 hours
-					bgColor = "#ffc107"; // yellow → warning
-					tooltip = getCountdownTooltip(votingEnd);
-				} else {
-					bgColor = "#dc3545"; // red → active and not near end
-					tooltip = getCountdownTooltip(votingEnd);
+			if (isClosed) {
+				badgeClass = "bg-success"; // Green
+			} else if (votingEnd) {
+				const diffHours = (votingEnd - now) / (1000 * 60 * 60);
+				if (diffHours <= 5 && diffHours > 0) {
+					badgeClass = "bg-warning"; // Yellow
+					tooltipText = "Voting ending soon!";
+				} else if (diffHours <= 0) {
+					badgeClass = "bg-danger"; // Red
+					tooltipText = "Voting period has passed!";
 				}
 			}
 
 			const row = document.createElement("tr");
 
 			row.innerHTML = `
-				<td>${id}</td>
-				<td>${title}</td>
-				<td>
-					<span class="badge rounded-pill" style="background-color: ${bgColor}; color: black;" title="${tooltip}">
-						${votingEnd ? formatDateShortMonth(votingEnd) : "N/A"}
-					</span>
-				</td>
-				<td>
-					<button class="btn btn-primary" onclick="viewResults('${id}')">View Results</button>
-					<button class="btn btn-danger" onclick="handleEndVoting('${id}')"
-						${votingEnd && now >= votingEnd ? "disabled" : ""}>
-						${votingEnd && now >= votingEnd ? "Voting Ended" : "End Voting"}
-					</button>
-				</td>
-			`;
+                <td>${id}</td>
+                <td>${title}</td>
+                <td>
+                    <span class="badge rounded-pill ${badgeClass}" title="${tooltipText}">
+                        ${
+													votingEnd
+														? votingEnd.toLocaleString("en-US", {
+																month: "short",
+																day: "numeric",
+																hour: "2-digit",
+																minute: "2-digit",
+														  })
+														: "N/A"
+												}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-primary" onclick="viewResults('${id}')">View Results</button>
+                    <button class="btn btn-danger" onclick="handleEndVoting('${id}')"
+                        ${isClosed ? "disabled" : ""}>
+                        ${isClosed ? "Voting Ended" : "End Voting"}
+                    </button>
+                </td>
+            `;
 
 			ballotsList.appendChild(row);
 		}
