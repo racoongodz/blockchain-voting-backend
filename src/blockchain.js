@@ -629,15 +629,13 @@ export async function createBallot(
 	votingEnd
 ) {
 	const account = await connectWallet();
-	if (!account) return;
+	if (!account) return { success: false };
 
 	try {
 		// 1️⃣ Create ballot on blockchain
 		await contract.methods
 			.createBallot(ballotId, title, positions, candidates)
 			.send({ from: account });
-
-		alert("✅ Ballot created successfully on blockchain!");
 
 		// 2️⃣ Save metadata to backend
 		const response = await fetch(
@@ -660,10 +658,10 @@ export async function createBallot(
 		if (!response.ok)
 			throw new Error(data.error || "Failed to save ballot metadata.");
 
-		alert("✅ Ballot metadata saved successfully!");
+		return { success: true }; // ✅ Both steps succeeded
 	} catch (error) {
 		console.error("❌ Error creating ballot:", error);
-		alert("❌ Failed to create ballot. Check console for details.");
+		return { success: false, error };
 	}
 }
 

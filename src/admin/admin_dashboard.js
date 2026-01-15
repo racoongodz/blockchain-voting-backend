@@ -202,8 +202,8 @@ document
 		});
 
 		try {
-			// ✅ Pass new dates to createBallot
-			await createBallot(
+			// ✅ Call refactored createBallot that returns success flag
+			const result = await createBallot(
 				ballotId,
 				title,
 				positions,
@@ -213,16 +213,22 @@ document
 				votingEnd
 			);
 
-			// Reset form & modal
-			document.getElementById("ballotForm").reset();
-			document.querySelector(".btn-close").click(); // Close Modal
-			document.getElementById("positionsContainer").innerHTML = ""; // Clear Positions
-			addPosition(); // Ensure at least one position exists
+			if (result.success) {
+				alert("✅ Ballot created and saved successfully!");
 
-			// Reload page after short delay
-			setTimeout(() => {
-				location.reload();
-			}, 1000);
+				// Reset form & modal
+				document.getElementById("ballotForm").reset();
+				document.querySelector(".btn-close").click(); // Close Modal
+				document.getElementById("positionsContainer").innerHTML = ""; // Clear Positions
+				addPosition(); // Ensure at least one position exists
+
+				// Reload page after short delay
+				setTimeout(() => {
+					location.reload();
+				}, 1000);
+			} else {
+				alert("❌ Failed to create ballot. Check console for details.");
+			}
 		} catch (error) {
 			console.error("Error creating ballot:", error);
 			alert("❌ Failed to create ballot. Check console for details.");
