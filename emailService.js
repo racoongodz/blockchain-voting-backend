@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 
 async function sendVoterPassword(email, password) {
 	const mailOptions = {
-		from: `"Blockchain Voting System" <${process.env.EMAIL_USER}>`,
+		from: process.env.EMAIL_USER,
 		to: email,
 		subject: "Your Voting System Password",
 		html: `
