@@ -12,29 +12,27 @@ import {
 } from "../blockchain.js";
 window.fetchApprovedVoters = fetchApprovedVoters;
 
-// Utility to format date with 3-letter month
+// Format date as "Mon DD, YYYY HH:MM"
 function formatDateShortMonth(date) {
-	const months = [
-		"Jan",
-		"Feb",
-		"Mar",
-		"Apr",
-		"May",
-		"Jun",
-		"Jul",
-		"Aug",
-		"Sep",
-		"Oct",
-		"Nov",
-		"Dec",
-	];
-	const d = new Date(date);
-	const month = months[d.getMonth()];
-	const day = d.getDate();
-	const year = d.getFullYear();
-	const hours = d.getHours().toString().padStart(2, "0");
-	const minutes = d.getMinutes().toString().padStart(2, "0");
-	return `${month} ${day}, ${year} ${hours}:${minutes}`;
+	const options = {
+		month: "short",
+		day: "2-digit",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	};
+	return date.toLocaleString("en-US", options);
+}
+
+// Calculate countdown string for tooltip
+function getCountdownTooltip(votingEnd) {
+	const now = new Date();
+	const diffMs = votingEnd - now;
+	if (diffMs <= 0) return "Voting period ended";
+
+	const diffHrs = Math.floor(diffMs / 1000 / 60 / 60);
+	const diffMins = Math.floor((diffMs / 1000 / 60) % 60);
+	return `Ends in ${diffHrs}h ${diffMins}m`;
 }
 
 async function displayBallots() {
@@ -44,7 +42,6 @@ async function displayBallots() {
 	try {
 		const result = await getMyBallots();
 
-		// No ballots check
 		if (!result || !result.ballotIds || result.ballotIds.length === 0) {
 			ballotsList.innerHTML =
 				"<tr><td colspan='4' class='text-center'>No ballots found.</td></tr>";
@@ -57,7 +54,7 @@ async function displayBallots() {
 			const id = ballotIds[index];
 			const title = ballotTitles[index];
 
-			// Fetch the voting_end date from backend
+			// Fetch voting_end date for this ballot from backend
 			const votingEndRes = await fetch(
 				`https://blockchain-voting-backend.onrender.com/get-ballot/${id}`
 			);
@@ -67,65 +64,47 @@ async function displayBallots() {
 				: null;
 
 			const now = new Date();
-			let endDateColor = "";
+			let bgColor = "";
 			let tooltip = "";
 
-			if (votingEnd) {
+			if (!votingEnd) {
+				bgColor = "#6c757d"; // gray if N/A
+				tooltip = "No end date set";
+			} else {
 				const diffMs = votingEnd - now;
-				const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-				const diffMinutes = Math.floor((diffMs / (1000 * 60)) % 60);
-
-				if (await isBallotClosed(id)) {
-					endDateColor = "green";
-				} else if (diffMs < 0) {
-					endDateColor = "red";
+				if (diffMs <= 0) {
+					bgColor = "#198754"; // green
+					tooltip = "Voting period ended";
 				} else if (diffMs <= 5 * 60 * 60 * 1000) {
-					endDateColor = "yellow";
-					tooltip = `Ends in ${diffHours}h ${diffMinutes}m`;
+					// less than 5 hours
+					bgColor = "#ffc107"; // yellow
+					tooltip = getCountdownTooltip(votingEnd);
+				} else {
+					bgColor = "#dc3545"; // red
+					tooltip = getCountdownTooltip(votingEnd);
 				}
 			}
 
 			const row = document.createElement("tr");
 
 			row.innerHTML = `
-                <td>${id}</td> <!-- Ballot ID -->
-                <td>${title}</td>
-                <td style="color:${endDateColor}" title="${tooltip}">
-                    ${votingEnd ? formatDateShortMonth(votingEnd) : "N/A"}
-                </td>
-                <td>
-                    <button class="btn btn-primary" onclick="viewResults('${id}')">View Results</button>
-                    <button class="btn btn-danger" onclick="handleEndVoting('${id}')"
-                        ${(await isBallotClosed(id)) ? "disabled" : ""}>
-                        ${
-													(await isBallotClosed(id))
-														? "Voting Ended"
-														: "End Voting"
-												}
-                    </button>
-                </td>
-            `;
+				<td>${id}</td>
+				<td>${title}</td>
+				<td>
+					<span class="badge" style="background-color: ${bgColor}; color: black;" title="${tooltip}">
+						${votingEnd ? formatDateShortMonth(votingEnd) : "N/A"}
+					</span>
+				</td>
+				<td>
+					<button class="btn btn-primary" onclick="viewResults('${id}')">View Results</button>
+					<button class="btn btn-danger" onclick="handleEndVoting('${id}')"
+						${votingEnd && now >= votingEnd ? "disabled" : ""}>
+						${votingEnd && now >= votingEnd ? "Voting Ended" : "End Voting"}
+					</button>
+				</td>
+			`;
 
 			ballotsList.appendChild(row);
-
-			// Optional: auto-refresh countdown for yellow warning every minute
-			if (votingEnd && !(await isBallotClosed(id))) {
-				setInterval(async () => {
-					const cell = row.children[2];
-					const now = new Date();
-					const diffMs = votingEnd - now;
-					const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-					const diffMinutes = Math.floor((diffMs / (1000 * 60)) % 60);
-
-					if (diffMs <= 0) {
-						cell.style.color = "red";
-						cell.title = "";
-					} else if (diffMs <= 5 * 60 * 60 * 1000) {
-						cell.style.color = "yellow";
-						cell.title = `Ends in ${diffHours}h ${diffMinutes}m`;
-					}
-				}, 60 * 1000);
-			}
 		}
 	} catch (error) {
 		console.error("Error displaying ballots:", error);
