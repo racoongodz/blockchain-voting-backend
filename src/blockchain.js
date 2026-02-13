@@ -507,7 +507,7 @@ const contractABI = [
 ];
 
 // Smart contract address (Update after deployment)
-const contractAddress = "0xfedeDFDd609f80d34076A0B99E9974bA5A56EFe0";
+const contractAddress = "0x971653bDD76d3527319D67AfB94Cc0220B40CCAb";
 
 // Initialize contract
 const contract = new web3.eth.Contract(contractABI, contractAddress);
@@ -626,7 +626,7 @@ export async function createBallot(
 	candidates,
 	registrationStart,
 	registrationEnd,
-	votingEnd
+	votingEnd,
 ) {
 	const account = await connectWallet();
 	if (!account) return { success: false };
@@ -651,7 +651,7 @@ export async function createBallot(
 					registration_end: registrationEnd,
 					voting_end: votingEnd || null,
 				}),
-			}
+			},
 		);
 
 		const data = await response.json();
@@ -741,7 +741,7 @@ export async function getVotersWithStatus(ballotId) {
 export async function voteMultiple(
 	ballotId,
 	positionIndexes,
-	candidateIndexes
+	candidateIndexes,
 ) {
 	const account = await connectWallet();
 	if (!account) return;
@@ -802,7 +802,7 @@ export async function getBallotDetails(ballotId) {
 export async function registerMultipleVoters(
 	voterAddresses,
 	ballotId,
-	hashedPasswords
+	hashedPasswords,
 ) {
 	try {
 		const account = await connectWallet();
@@ -816,7 +816,7 @@ export async function registerMultipleVoters(
 		if (!Array.isArray(voterAddresses) || voterAddresses.length === 0) {
 			console.error(
 				"❌ voterAddresses array is empty or invalid:",
-				voterAddresses
+				voterAddresses,
 			);
 			alert("No voters selected to register.");
 			return null;
@@ -828,7 +828,7 @@ export async function registerMultipleVoters(
 		) {
 			console.error(
 				"❌ hashedPasswords array is invalid or does not match voterAddresses length:",
-				hashedPasswords
+				hashedPasswords,
 			);
 			alert("Password array is invalid or does not match voter list.");
 			return null;
