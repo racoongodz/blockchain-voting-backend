@@ -1012,7 +1012,7 @@ async function registerApprovedVoters(ballotId) {
 					}),
 				},
 			);
-
+			window.location.reload();
 			// // 2️⃣ Send emails via backend
 			// await fetch(
 			// 	"https://blockchain-voting-backend.onrender.com/send-voter-passwords",
