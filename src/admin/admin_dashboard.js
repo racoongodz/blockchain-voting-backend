@@ -35,7 +35,7 @@ async function displayBallots() {
 
 			// Fetch ballot metadata including voting_end
 			const votingEndRes = await fetch(
-				`https://blockchain-voting-backend.onrender.com/get-ballot/${id}`
+				`https://blockchain-voting-backend.onrender.com/get-ballot/${id}`,
 			);
 			const votingData = await votingEndRes.json();
 			const votingEnd = votingData?.voting_end
@@ -143,7 +143,7 @@ document.addEventListener("DOMContentLoaded", displayBallots);
 //END VOTING
 async function handleEndVoting(ballotId) {
 	const confirmEnd = confirm(
-		"Are you sure you want to end the voting for this ballot?"
+		"Are you sure you want to end the voting for this ballot?",
 	);
 	if (!confirmEnd) return;
 
@@ -191,7 +191,7 @@ function addPosition() {
 		"mt-3",
 		"p-3",
 		"border",
-		"rounded"
+		"rounded",
 	);
 
 	positionGroup.innerHTML = `
@@ -248,7 +248,7 @@ document
 		document.querySelectorAll(".position-group").forEach((group) => {
 			const positionName = group.querySelector(".positionName").value.trim();
 			const candidateInputs = group.querySelectorAll(
-				".candidate-list .candidate-input"
+				".candidate-list .candidate-input",
 			);
 			const candidateNames = [];
 
@@ -293,7 +293,7 @@ document
 				candidates,
 				registrationStartUTC,
 				registrationEndUTC,
-				votingEndUTC
+				votingEndUTC,
 			);
 
 			if (result.success) {
@@ -305,7 +305,7 @@ document
 				setTimeout(() => location.reload(), 1000);
 			} else {
 				alert(
-					"❌ Failed to create ballot: " + (result.error || "Unknown error")
+					"❌ Failed to create ballot: " + (result.error || "Unknown error"),
 				);
 			}
 		} catch (error) {
@@ -411,10 +411,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
 			<h6>Important Dates</h6>
 			<p><strong>Registration Start:</strong> ${formatDateTime(
-				details.registration_start
+				details.registration_start,
 			)}</p>
 <p><strong>Registration End:</strong> ${formatDateTime(
-			details.registration_end
+			details.registration_end,
 		)}</p>
 <p><strong>Voting End:</strong> ${formatDateTime(details.voting_end)}</p>
 
@@ -432,7 +432,7 @@ document.addEventListener("DOMContentLoaded", function () {
 									${position.candidates.map((c) => `<li>${c}</li>`).join("")}
 								</ul>
 							</li>
-						`
+						`,
 					)
 					.join("")}
 			</ul>
@@ -459,7 +459,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 	async function getBallotMetadata(ballotId) {
 		const response = await fetch(
-			`https://blockchain-voting-backend.onrender.com/get-ballot/${ballotId}`
+			`https://blockchain-voting-backend.onrender.com/get-ballot/${ballotId}`,
 		);
 		if (!response.ok) throw new Error("Failed to fetch ballot metadata");
 		return response.json();
@@ -490,10 +490,10 @@ document.addEventListener("DOMContentLoaded", function () {
 					<p><strong>Ballot Title:</strong> ${details.title}</p>
 
 					<p><strong>Registration Start:</strong> ${formatDateTime(
-						details.registration_start
+						details.registration_start,
 					)}</p>
 <p><strong>Registration End:</strong> ${formatDateTime(
-			details.registration_end
+			details.registration_end,
 		)}</p>
 <p><strong>Voting End:</strong> ${formatDateTime(details.voting_end)}</p>
 
@@ -510,7 +510,7 @@ document.addEventListener("DOMContentLoaded", function () {
 											${position.candidates.map((c) => `<li>${c}</li>`).join("")}
 										</ul>
 									</li>
-								`
+								`,
 							)
 							.join("")}
 					</ul>
@@ -551,7 +551,7 @@ async function fetchPendingVoters() {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ ballot_ids: ballotIds }),
-			}
+			},
 		);
 
 		if (!response.ok) {
@@ -641,7 +641,7 @@ async function approveVoter(voterId) {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ voter_id: voterId }),
-			}
+			},
 		);
 
 		const data = await response.json();
@@ -667,7 +667,7 @@ async function rejectVoter(voterId) {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ voter_id: voterId }),
-			}
+			},
 		);
 
 		const data = await response.json();
@@ -703,21 +703,21 @@ async function fetchApprovedVoters() {
 			return;
 		}
 
-		// Fetch all approved voters from backend
+		// Fetch approved voters from backend
 		const response = await fetch(
 			"https://blockchain-voting-backend.onrender.com/approved-voters",
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ ballot_ids: ballotIds }),
-			}
+			},
 		);
 
 		if (!response.ok)
 			throw new Error(`Failed to fetch approved voters: ${response.status}`);
+
 		const groupedVoters = await response.json();
 
-		// Track all containers & toggle buttons for accordion
 		const allContainers = [];
 		const allButtons = [];
 
@@ -728,13 +728,12 @@ async function fetchApprovedVoters() {
 			const ballotContainer = document.createElement("div");
 			ballotContainer.classList.add("mb-4");
 
-			// Title + Toggle Button Container
 			const titleContainer = document.createElement("div");
 			titleContainer.classList.add(
 				"d-flex",
 				"justify-content-between",
 				"align-items-center",
-				"mb-2"
+				"mb-2",
 			);
 
 			const ballotTitle = document.createElement("h4");
@@ -748,35 +747,36 @@ async function fetchApprovedVoters() {
 				"btn",
 				"btn-sm",
 				"btn-outline-secondary",
-				"ms-2"
+				"ms-2",
 			);
 
-			// Voters container
 			const votersContainer = document.createElement("div");
 			votersContainer.style.display = "none";
 
-			// Step 1: Check if all voters are on-chain
+			// Check if all voters are on-chain
 			const allOnChain = voters.every((v) => v.is_onchain);
 
-			// Add to Blockchain button
 			const addButton = document.createElement("button");
 			addButton.textContent = allOnChain
 				? "Added to Blockchain"
 				: "Add to Blockchain";
 			addButton.classList.add("btn", "btn-primary", "mb-2");
 			addButton.disabled = allOnChain;
+
 			if (allOnChain)
 				addButton.title = "All voters are already registered on-chain";
 			else addButton.onclick = () => registerApprovedVoters(ballotId);
+
 			votersContainer.appendChild(addButton);
 
-			// Table
+			// TABLE
 			const table = document.createElement("table");
 			table.classList.add("table", "table-striped");
 			table.innerHTML = `
 				<thead>
 					<tr>
 						<th>ID</th>
+						<th>Photo</th>
 						<th>Full Name</th>
 						<th>Email</th>
 						<th>MetaMask Address</th>
@@ -786,57 +786,76 @@ async function fetchApprovedVoters() {
 				</thead>
 				<tbody></tbody>
 			`;
+
 			const tbody = table.querySelector("tbody");
 
-			// Step 2: Same-name warning map
 			const nameCountMap = {};
 			voters.forEach((voter) => {
 				const key = `${ballotId}||${voter.full_name}`;
 				nameCountMap[key] = (nameCountMap[key] || 0) + 1;
 			});
 
-			// Step 3: Render rows
 			voters.forEach((voter, vIndex) => {
 				const passwordId = `password-${ballotId}-${vIndex}`;
 				const nameKey = `${ballotId}||${voter.full_name}`;
 
 				const nameDisplay =
 					nameCountMap[nameKey] > 1
-						? `<span class="badge rounded-pill bg-warning text-dark" title="⚠ Warning: ${nameCountMap[nameKey]} approved voters share this name.">${voter.full_name}</span>`
+						? `<span class="badge rounded-pill bg-warning text-dark" 
+						   title="⚠ Warning: ${nameCountMap[nameKey]} approved voters share this name.">
+						   ${voter.full_name}
+						   </span>`
 						: voter.full_name;
+
+				const photoUrl = voter.id_photo
+					? `https://blockchain-voting-backend.onrender.com/${voter.id_photo}`
+					: "";
 
 				const row = document.createElement("tr");
 				row.innerHTML = `
 					<td>${voter.id}</td>
+
+					<td>
+						${
+							photoUrl
+								? `<img 
+									src="${photoUrl}" 
+									alt="ID Photo"
+									style="width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;"
+									onclick="window.showImageModal('${photoUrl}')"
+								/>`
+								: `<span class="text-muted">No Photo</span>`
+						}
+					</td>
+
 					<td>${nameDisplay}</td>
 					<td>${voter.email}</td>
 					<td>${voter.metamask_address}</td>
+
 					<td>
 						<span id="${passwordId}" class="password-hidden">******</span>
-						<button class="btn btn-sm btn-secondary" onclick="window.togglePassword('${passwordId}', '${
-					voter.voter_password
-				}')">Show</button>
+						<button class="btn btn-sm btn-secondary"
+							onclick="window.togglePassword('${passwordId}', '${voter.voter_password}')">
+							Show
+						</button>
 					</td>
+
 					<td>
 						<button 
 							class="btn btn-sm btn-danger" 
 							onclick="window.unapproveVoter(${voter.id}, '${ballotId}', this)"
-							${
-								voter.is_onchain
-									? "disabled title='Cannot remove approval: voter is on-chain'"
-									: ""
-							}
+							${voter.is_onchain ? "disabled title='Cannot remove approval: voter is on-chain'" : ""}
 						>
 							Remove Approval
 						</button>
 					</td>
 				`;
+
 				tbody.appendChild(row);
 			});
 
 			votersContainer.appendChild(table);
 
-			// Accordion toggle
 			toggleButton.onclick = () => {
 				const isHidden = votersContainer.style.display === "none";
 				allContainers.forEach((c) => (c.style.display = "none"));
@@ -850,7 +869,6 @@ async function fetchApprovedVoters() {
 			allContainers.push(votersContainer);
 			allButtons.push(toggleButton);
 
-			// Append
 			titleContainer.appendChild(ballotTitle);
 			titleContainer.appendChild(toggleButton);
 			ballotContainer.appendChild(titleContainer);
@@ -859,10 +877,17 @@ async function fetchApprovedVoters() {
 		});
 	} catch (error) {
 		console.error("❌ Error fetching approved voters:", error);
-		const listContainer = document.getElementById("approvedVoterList");
-		listContainer.innerHTML = `<p class="text-center text-danger">Error fetching approved voters.</p>`;
+		document.getElementById("approvedVoterList").innerHTML =
+			`<p class="text-center text-danger">Error fetching approved voters.</p>`;
 	}
 }
+window.showImageModal = function (imageSrc) {
+	const modalImage = document.getElementById("modalImage");
+	modalImage.src = imageSrc;
+
+	const modal = new bootstrap.Modal(document.getElementById("imageModal"));
+	modal.show();
+};
 
 // Password toggle
 window.togglePassword = (passwordId, actualPassword) => {
@@ -874,7 +899,7 @@ window.togglePassword = (passwordId, actualPassword) => {
 // Remove Approval button
 window.unapproveVoter = async (voterId, ballotId, btnElement) => {
 	const confirmed = confirm(
-		"Are you sure you want to remove approval for this voter?"
+		"Are you sure you want to remove approval for this voter?",
 	);
 	if (!confirmed) return;
 
@@ -885,7 +910,7 @@ window.unapproveVoter = async (voterId, ballotId, btnElement) => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ voter_id: voterId, ballot_id: ballotId }),
-			}
+			},
 		);
 
 		const result = await response.json();
@@ -940,7 +965,7 @@ async function registerApprovedVoters(ballotId) {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ ballot_ids: [ballotId] }),
-			}
+			},
 		);
 		const groupedVoters = await response.json();
 		const voters = groupedVoters[ballotId] || [];
@@ -954,7 +979,7 @@ async function registerApprovedVoters(ballotId) {
 		const unregisteredVoters = voters.filter((v) => !v.isOnChain);
 		if (!unregisteredVoters.length) {
 			alert(
-				"All voters for this ballot are already registered on the blockchain."
+				"All voters for this ballot are already registered on the blockchain.",
 			);
 			return;
 		}
@@ -962,20 +987,20 @@ async function registerApprovedVoters(ballotId) {
 		// Prepare addresses and hashed passwords
 		const voterAddresses = unregisteredVoters.map((v) => v.metamask_address);
 		const hashedPasswords = unregisteredVoters.map((v) =>
-			web3Instance.utils.keccak256(v.voter_password)
+			web3Instance.utils.keccak256(v.voter_password),
 		);
 
 		// Call blockchain function to register voters
 		const receipt = await registerMultipleVoters(
 			voterAddresses,
 			ballotId,
-			hashedPasswords
+			hashedPasswords,
 		);
 
 		// Only proceed if blockchain transaction succeeded
 		if (receipt && receipt.status) {
 			alert(
-				`✅ Successfully registered ${unregisteredVoters.length} voter(s) for ballot ${ballotId}.`
+				`✅ Successfully registered ${unregisteredVoters.length} voter(s) for ballot ${ballotId}.`,
 			);
 
 			// 1️⃣ Mark them as on-chain in backend
@@ -987,7 +1012,7 @@ async function registerApprovedVoters(ballotId) {
 					body: JSON.stringify({
 						voterIds: unregisteredVoters.map((v) => v.id),
 					}),
-				}
+				},
 			);
 
 			// // 2️⃣ Send emails via backend
@@ -1041,7 +1066,7 @@ async function deleteVoter(voterId, ballotId, button) {
 			`https://blockchain-voting-backend.onrender.com/delete-voter/${voterId}`,
 			{
 				method: "DELETE",
-			}
+			},
 		);
 
 		if (!response.ok) {
@@ -1062,7 +1087,7 @@ async function deleteVoter(voterId, ballotId, button) {
 function openRegisterVoterModal() {
 	populateBallotDropdownFromContract();
 	let modal = new bootstrap.Modal(
-		document.getElementById("addApprovedVoterModal")
+		document.getElementById("addApprovedVoterModal"),
 	);
 	modal.show();
 }
@@ -1096,7 +1121,7 @@ document
 						metamask_address: metamaskAddress,
 						ballot_id: ballotId,
 					}),
-				}
+				},
 			);
 
 			const data = await response.json();
@@ -1156,10 +1181,10 @@ async function populateBallotDropdownFromContract() {
 // Registered Voters Report
 document.addEventListener("DOMContentLoaded", function () {
 	const registeredVotersModal = document.getElementById(
-		"registeredVotersModal"
+		"registeredVotersModal",
 	);
 	const fetchRegisteredVotersBtn = document.getElementById(
-		"fetchRegisteredVoters"
+		"fetchRegisteredVoters",
 	);
 	const ballotSelect = document.getElementById("ballotIdVoterSelect");
 	const voterDetailsContent = document.getElementById("voterDetailsContent");
@@ -1173,7 +1198,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		!downloadVoterPdf
 	) {
 		console.error(
-			"❌ Some elements are missing in the HTML. Please check your IDs."
+			"❌ Some elements are missing in the HTML. Please check your IDs.",
 		);
 		return;
 	}
@@ -1469,7 +1494,7 @@ document.addEventListener("DOMContentLoaded", function () {
 				positions: results.positions,
 				candidates: results.candidates,
 				voteCounts: results.voteCounts.map((arr) =>
-					arr.map((v) => v.toString())
+					arr.map((v) => v.toString()),
 				),
 			};
 			resultsDisplay.dataset.results = JSON.stringify(serializableResults);
@@ -1505,8 +1530,8 @@ document.addEventListener("DOMContentLoaded", function () {
 						: ""
 				}">
                             ${candidate}: ${voteCounts[i]} votes ${
-					isWinner ? "- WINNER" : ""
-				}
+															isWinner ? "- WINNER" : ""
+														}
                          </li>`;
 			});
 			html += "</ul>";
@@ -1541,7 +1566,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		let ballotEndDate = "";
 		try {
 			const response = await fetch(
-				`https://blockchain-voting-backend.onrender.com/get-ballot/${ballotId}`
+				`https://blockchain-voting-backend.onrender.com/get-ballot/${ballotId}`,
 			);
 			if (!response.ok) throw new Error("Failed to fetch ballot details");
 

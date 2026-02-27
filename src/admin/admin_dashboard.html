@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
@@ -713,7 +713,16 @@
 				</div>
 			</div>
 		</div>
-
+		<!-- Image Preview Modal -->
+		<div class="modal fade" id="imageModal" tabindex="-1">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-body text-center">
+						<img id="modalImage" src="" class="img-fluid rounded" />
+					</div>
+				</div>
+			</div>
+		</div>
 		<!-- -------------------------------------------------------------------------------------------------------- -->
 
 		<script>
@@ -723,7 +732,7 @@
 					.getElementById("searchVoter")
 					.value.toLowerCase();
 				const tables = document.querySelectorAll(
-					"#approvedVotersSection tbody"
+					"#approvedVotersSection tbody",
 				);
 
 				tables.forEach((tbody) => {

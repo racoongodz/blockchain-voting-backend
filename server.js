@@ -8,11 +8,12 @@ const { Pool } = require("pg"); // Use Postgres client for Supabase DB
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use("/uploads", express.static("uploads"));
 
 // Initialize Supabase
 const supabase = createClient(
 	process.env.SUPABASE_URL,
-	process.env.SUPABASE_KEY
+	process.env.SUPABASE_KEY,
 );
 
 // Postgres connection (Supabase)
@@ -42,7 +43,7 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
 		// ======================
 		const ballotRes = await db.query(
 			"SELECT registration_start, registration_end FROM ballots WHERE ballot_id = $1",
-			[ballot_id]
+			[ballot_id],
 		);
 
 		if (ballotRes.rows.length === 0) {
@@ -75,7 +76,7 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
       SELECT 1 FROM approved_voters 
       WHERE ballot_id = $1 AND metamask_address = $2
       `,
-			[ballot_id, metamask_address]
+			[ballot_id, metamask_address],
 		);
 
 		if (walletCheck.rows.length > 0) {
@@ -93,7 +94,7 @@ app.post("/register-voter", upload.single("id_photo"), async (req, res) => {
       SELECT 1 FROM approved_voters 
       WHERE ballot_id = $1 AND email = $2
       `,
-			[ballot_id, email]
+			[ballot_id, email],
 		);
 
 		if (emailCheck.rows.length > 0) {
@@ -186,7 +187,7 @@ app.post("/approve-voter", async (req, res) => {
 		// Fetch voter from pending
 		const { rows } = await db.query(
 			"SELECT * FROM pending_voters WHERE id=$1",
-			[voter_id]
+			[voter_id],
 		);
 		if (rows.length === 0)
 			return res.status(404).json({ error: "Voter not found." });
@@ -202,7 +203,7 @@ app.post("/approve-voter", async (req, res) => {
   SELECT 1 FROM approved_voters
   WHERE ballot_id = $1 AND metamask_address = $2
   `,
-			[voter.ballot_id, voter.metamask_address]
+			[voter.ballot_id, voter.metamask_address],
 		);
 
 		if (dupCheck.rows.length > 0) {
@@ -228,7 +229,7 @@ app.post("/approve-voter", async (req, res) => {
 				voter.metamask_address,
 				voter.id_photo,
 				voter_password,
-			]
+			],
 		);
 
 		// Delete from pending
@@ -313,7 +314,7 @@ app.post("/addApprovedVoter", async (req, res) => {
 		// ✅ Only block duplicate MetaMask for the same ballot
 		const dupCheck = await db.query(
 			"SELECT * FROM approved_voters WHERE ballot_id=$1 AND metamask_address=$2",
-			[ballot_id, metamask_address]
+			[ballot_id, metamask_address],
 		);
 		if (dupCheck.rows.length > 0)
 			return res.status(400).json({
@@ -328,7 +329,7 @@ app.post("/addApprovedVoter", async (req, res) => {
 		await db.query(
 			`INSERT INTO approved_voters (ballot_id, full_name, email, metamask_address, voter_password)
              VALUES ($1,$2,$3,$4,$5)`,
-			[ballot_id, full_name, email, metamask_address, voter_password]
+			[ballot_id, full_name, email, metamask_address, voter_password],
 		);
 
 		res.json({ success: true, message: "Voter manually added successfully!" });
@@ -370,7 +371,7 @@ app.get("/api/pending-name-conflicts", async (req, res) => {
       FROM pending_voters
       WHERE ballot_id = $1 AND full_name = $2
       `,
-			[ballot_id, full_name]
+			[ballot_id, full_name],
 		);
 
 		res.json(rows);
@@ -386,7 +387,7 @@ app.get("/api/pending-name-conflicts", async (req, res) => {
 app.get("/api/getApprovedVoters", async (req, res) => {
 	try {
 		const { rows } = await db.query(
-			"SELECT metamask_address, voter_password, ballot_id FROM approved_voters"
+			"SELECT metamask_address, voter_password, ballot_id FROM approved_voters",
 		);
 		res.json(rows);
 	} catch (err) {
@@ -410,7 +411,7 @@ app.post("/unapprove-voter", async (req, res) => {
 		// Delete the voter from approved_voters
 		const { rowCount } = await db.query(
 			"DELETE FROM approved_voters WHERE id=$1 AND ballot_id=$2",
-			[voter_id, ballot_id]
+			[voter_id, ballot_id],
 		);
 
 		if (rowCount === 0) {
@@ -443,7 +444,7 @@ app.post("/mark-onchain", async (req, res) => {
 			`UPDATE approved_voters 
        SET is_onchain = true 
        WHERE id IN (${placeholders})`,
-			voterIds
+			voterIds,
 		);
 
 		res.json({ success: true });
@@ -488,7 +489,7 @@ app.post("/save-ballot", async (req, res) => {
 		// Prevent duplicate save
 		const existing = await db.query(
 			"SELECT ballot_id FROM ballots WHERE ballot_id = $1",
-			[ballot_id]
+			[ballot_id],
 		);
 
 		if (existing.rows.length > 0) {
@@ -514,7 +515,7 @@ app.post("/save-ballot", async (req, res) => {
 				registration_start,
 				registration_end,
 				voting_end || null,
-			]
+			],
 		);
 
 		res.json({ success: true, message: "Ballot saved successfully." });
@@ -539,7 +540,7 @@ app.get("/get-ballot/:id", async (req, res) => {
 			`SELECT ballot_id, title, registration_start, registration_end, voting_end
              FROM ballots
              WHERE ballot_id = $1`,
-			[id]
+			[id],
 		);
 
 		if (rows.length === 0) {
