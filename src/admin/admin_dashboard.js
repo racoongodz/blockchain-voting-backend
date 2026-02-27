@@ -1151,7 +1151,7 @@ async function populateBallotDropdownFromContract() {
 	select.innerHTML = ""; // Clear existing options
 
 	try {
-		const { ballotIds, ballotTitles } = await getMyBallots();
+		const { ballotIds } = await getMyBallots(); // blockchain IDs
 
 		if (!ballotIds || ballotIds.length === 0) {
 			const option = document.createElement("option");
@@ -1161,10 +1161,30 @@ async function populateBallotDropdownFromContract() {
 			return;
 		}
 
-		ballotIds.forEach((id, index) => {
+		// Fetch all ballots from backend
+		const response = await fetch("https://your-backend.com/get-ballots");
+		const allBallots = await response.json();
+
+		const now = new Date();
+
+		// Filter blockchain ballots with open registration
+		const openBallots = allBallots.filter(
+			(b) =>
+				ballotIds.includes(b.ballot_id) && new Date(b.registration_end) > now,
+		);
+
+		if (openBallots.length === 0) {
 			const option = document.createElement("option");
-			option.value = id; // numeric ballot ID expected by backend
-			option.textContent = `${ballotTitles[index]} (ID: ${id})`;
+			option.value = "";
+			option.textContent = "No open registrations";
+			select.appendChild(option);
+			return;
+		}
+
+		openBallots.forEach((b) => {
+			const option = document.createElement("option");
+			option.value = b.ballot_id;
+			option.textContent = `${b.title} (ID: ${b.ballot_id})`;
 			select.appendChild(option);
 		});
 	} catch (error) {
@@ -1175,7 +1195,6 @@ async function populateBallotDropdownFromContract() {
 		select.appendChild(option);
 	}
 }
-
 // Registered Voters Report
 document.addEventListener("DOMContentLoaded", function () {
 	const registeredVotersModal = document.getElementById(
