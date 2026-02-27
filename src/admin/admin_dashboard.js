@@ -1162,7 +1162,9 @@ async function populateBallotDropdownFromContract() {
 		}
 
 		// Fetch all ballots from backend
-		const response = await fetch("https://your-backend.com/get-ballots");
+		const response = await fetch(
+			"https://blockchain-voting-backend.onrender.com/get-ballots",
+		);
 		const allBallots = await response.json();
 
 		const now = new Date();
@@ -1195,6 +1197,7 @@ async function populateBallotDropdownFromContract() {
 		select.appendChild(option);
 	}
 }
+
 // Registered Voters Report
 document.addEventListener("DOMContentLoaded", function () {
 	const registeredVotersModal = document.getElementById(
