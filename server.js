@@ -279,6 +279,7 @@ app.post("/approved-voters", async (req, res) => {
     email,
     metamask_address,
     voter_password,
+	id_photo,
     is_onchain
   FROM approved_voters
   WHERE ballot_id IN (${placeholders})
