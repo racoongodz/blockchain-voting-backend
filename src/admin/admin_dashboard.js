@@ -807,9 +807,7 @@ async function fetchApprovedVoters() {
 						   </span>`
 						: voter.full_name;
 
-				const photoUrl = voter.id_photo
-					? `https://blockchain-voting-backend.onrender.com/${voter.id_photo}`
-					: "";
+				const photoUrl = voter.id_photo || "";
 
 				const row = document.createElement("tr");
 				row.innerHTML = `
