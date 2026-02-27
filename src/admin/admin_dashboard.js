@@ -1146,47 +1146,52 @@ document
 		}
 	});
 
-async function populateBallotDropdownFromContract(adminAddress) {
+async function populateBallotDropdownFromContract() {
 	const select = document.getElementById("voterBallotSelect");
-	select.innerHTML = ""; // Clear previous options
+	select.innerHTML = ""; // Clear existing options
 
 	try {
-		// Get blockchain ballot IDs for the logged-in voter/admin
+		// Get ballots from blockchain (already filtered for this user)
 		const { ballotIds } = await getMyBallots();
 
 		if (!ballotIds || ballotIds.length === 0) {
 			const option = document.createElement("option");
 			option.value = "";
-			option.textContent = "No ballots found on blockchain";
+			option.textContent = "No ballots found";
 			select.appendChild(option);
 			return;
 		}
 
-		// Fetch all ballots from backend for this admin
-		const backendUrl = `https://blockchain-voting-backend.onrender.com/get-ballots?adminAddress=${adminAddress}`;
-		const response = await fetch(backendUrl);
-
-		if (!response.ok) {
-			throw new Error(`Backend responded with status ${response.status}`);
-		}
-
-		// Read response as text first to catch HTML errors
-		const text = await response.text();
-		let allBallots;
-		try {
-			allBallots = JSON.parse(text);
-		} catch (err) {
-			console.error("Failed to parse JSON from backend. Received:", text);
-			throw new Error("Invalid JSON received from backend");
-		}
-
 		const now = new Date();
+		const openBallots = [];
 
-		// Filter: must be on-chain and registration still open
-		const openBallots = allBallots.filter(
-			(b) =>
-				ballotIds.includes(b.ballot_id) && new Date(b.registration_end) > now,
-		);
+		// Fetch metadata for each ballot from the backend
+		for (const id of ballotIds) {
+			try {
+				const response = await fetch(
+					`https://blockchain-voting-backend.onrender.com/get-ballot/${id}`,
+				);
+
+				if (!response.ok) {
+					console.warn(
+						`Ballot ${id} not found or backend error: ${response.status}`,
+					);
+					continue;
+				}
+
+				const ballot = await response.json();
+
+				// Only include ballots with registration still open
+				if (
+					ballot.registration_end &&
+					new Date(ballot.registration_end) > now
+				) {
+					openBallots.push(ballot);
+				}
+			} catch (err) {
+				console.error(`Error fetching ballot ${id}:`, err);
+			}
+		}
 
 		if (openBallots.length === 0) {
 			const option = document.createElement("option");
@@ -1204,7 +1209,7 @@ async function populateBallotDropdownFromContract(adminAddress) {
 			select.appendChild(option);
 		});
 
-		console.log("Ballot dropdown populated successfully:", openBallots);
+		console.log("Dropdown populated with open ballots:", openBallots);
 	} catch (error) {
 		console.error("Error populating ballot dropdown:", error);
 		const option = document.createElement("option");

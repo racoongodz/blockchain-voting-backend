@@ -569,6 +569,44 @@ app.get("/get-ballot/:id", async (req, res) => {
 	}
 });
 
+// ======================
+// Get All Ballots for Admin
+// ======================
+app.get("/get-ballots", async (req, res) => {
+	try {
+		const { adminAddress } = req.query; // optional filter by admin
+
+		const query = `
+			SELECT ballot_id, title, registration_start, registration_end, voting_end
+			FROM ballots
+			${adminAddress ? "WHERE admin_address = $1" : ""}
+			ORDER BY registration_end ASC
+		`;
+
+		const { rows } = adminAddress
+			? await db.query(query, [adminAddress])
+			: await db.query(query);
+
+		// Convert dates to ISO strings
+		const ballots = rows.map((b) => ({
+			ballot_id: b.ballot_id,
+			title: b.title,
+			registration_start: b.registration_start
+				? new Date(b.registration_start).toISOString()
+				: null,
+			registration_end: b.registration_end
+				? new Date(b.registration_end).toISOString()
+				: null,
+			voting_end: b.voting_end ? new Date(b.voting_end).toISOString() : null,
+		}));
+
+		res.json(ballots);
+	} catch (err) {
+		console.error("Error fetching ballots:", err);
+		res.status(500).json({ error: "Failed to fetch ballots." });
+	}
+});
+
 // const { sendVoterPassword } = require("./emailService");
 
 // app.post("/send-voter-passwords", async (req, res) => {
