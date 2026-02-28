@@ -947,23 +947,42 @@ function downloadVotersByBallotPDF(details) {
 				</h3>
 
 				<table style="
-					width:100%;
-					border-collapse:collapse;
-					margin-top:15px;
-					font-size:12px;
-				">
-					<thead>
-						<tr style="background-color:#f2f2f2;">
-							<th style="border:1px solid #000; padding:8px;">#</th>
-							<th style="border:1px solid #000; padding:8px;">Full Name</th>
-							<th style="border:1px solid #000; padding:8px;">Email</th>
-							<th style="border:1px solid #000; padding:8px;">Password</th>
-						</tr>
-					</thead>
-					<tbody>
-						${tableRows}
-					</tbody>
-				</table>
+				width:100%;
+				border-collapse:collapse;
+				margin-top:15px;
+				font-size:14px;
+			">
+				<thead>
+					<tr style="background-color:#e9e9e9;">
+						<th style="border:2px solid #000; padding:10px;">#</th>
+						<th style="border:2px solid #000; padding:10px;">Full Name</th>
+						<th style="border:2px solid #000; padding:10px;">Email</th>
+						<th style="border:2px solid #000; padding:10px;">Password</th>
+					</tr>
+				</thead>
+				<tbody>
+					${details.voters
+						.map(
+							(voter, index) => `
+								<tr>
+									<td style="border:2px solid #000; padding:10px; text-align:center;">
+										${index + 1}
+									</td>
+									<td style="border:2px solid #000; padding:10px; font-weight:500;">
+										${voter.full_name}
+									</td>
+									<td style="border:2px solid #000; padding:10px;">
+										${voter.email}
+									</td>
+									<td style="border:2px solid #000; padding:10px; font-weight:bold;">
+										${voter.voter_password}
+									</td>
+								</tr>
+							`,
+						)
+						.join("")}
+				</tbody>
+			</table>
 			</div>
 		</div>
 	`;
