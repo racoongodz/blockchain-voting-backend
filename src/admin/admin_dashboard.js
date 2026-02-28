@@ -1139,7 +1139,7 @@ document
 			modalElement.removeAttribute("aria-hidden");
 
 			// Refresh the approved voter list
-			await fetchApprovedVoters();
+			window.location.reload();
 		} catch (error) {
 			console.error("❌ Error adding voter:", error);
 			alert("❌ Failed to add voter. Please try again.");
